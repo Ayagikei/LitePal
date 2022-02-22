@@ -21,6 +21,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import org.litepal.crud.LitePalSupport
 import org.litepal.tablemanager.callback.DatabaseListener
+import kotlin.coroutines.CoroutineContext
 
 /**
  * LitePal is an Android library that allows developers to use SQLite database extremely easy.
@@ -46,13 +47,18 @@ object LitePal {
         Operator.initialize(context)
     }
 
+    @JvmStatic
+    fun setDbContext(context: CoroutineContext) {
+        dbSingleContextNullable = context
+    }
+
     /**
      * Get a writable SQLiteDatabase.
      *
      * @return A writable SQLiteDatabase instance
      */
     @JvmStatic
-    fun getDatabase(): SQLiteDatabase = Operator.getDatabase()
+    fun getDatabase(): SQLiteDatabase = Operator.database
 
     /**
      * Begins a transaction in EXCLUSIVE mode.
@@ -121,7 +127,7 @@ object LitePal {
      * @return A FluentQuery instance.
      */
     @JvmStatic
-    fun select(vararg columns: String?) = Operator.select(*columns)
+    fun select(vararg columns: String) = Operator.select(*columns)
 
     /**
      * Declaring to query which rows in table.
@@ -137,7 +143,7 @@ object LitePal {
      * @return A FluentQuery instance.
      */
     @JvmStatic
-    fun where(vararg conditions: String?) = Operator.where(*conditions)
+    fun where(vararg conditions: String) = Operator.where(*conditions)
 
     /**
      * Declaring how to order the rows queried from table.
@@ -1125,7 +1131,8 @@ object LitePal {
      * False otherwise. Null conditions will result in false.
      */
     @JvmStatic
-    fun <T> isExist(modelClass: Class<T>, vararg conditions: String?) = Operator.isExist(modelClass, *conditions)
+    fun <T> isExist(modelClass: Class<T>, vararg conditions: String) =
+        Operator.isExist(modelClass, *conditions)
 
     /**
      * Register a listener to listen database create and upgrade events.
