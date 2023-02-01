@@ -1,13 +1,11 @@
 package com.litepaltest.test;
 
-import android.database.sqlite.SQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.test.filters.SmallTest;
-
 import com.litepaltest.model.Classroom;
 import com.litepaltest.model.Computer;
 import com.litepaltest.model.Headset;
 import com.litepaltest.model.Product;
-
 import org.junit.Test;
 import org.litepal.LitePal;
 import org.litepal.LitePalDB;
@@ -26,7 +24,7 @@ public class MultiDatabaseTest extends LitePalTestCase {
     @Test
     public void testMultiDatabase() {
         LitePal.deleteDatabase("db2");
-        SQLiteDatabase db = LitePal.getDatabase();
+        SupportSQLiteDatabase db = LitePal.getDatabase();
         assertTrue(DBUtility.isTableExists("Album", db));
         assertTrue(DBUtility.isTableExists("Song", db));
         assertTrue(DBUtility.isTableExists("Singer", db));

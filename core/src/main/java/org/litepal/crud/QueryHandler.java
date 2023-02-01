@@ -16,12 +16,10 @@
 
 package org.litepal.crud;
 
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.List;
-
 import org.litepal.util.BaseUtility;
 import org.litepal.util.DBUtility;
-
-import android.database.sqlite.SQLiteDatabase;
 
 /**
  * This is a component under LitePalSupport. It deals with query stuff as primary
@@ -39,7 +37,7 @@ public class QueryHandler extends DataHandler {
 	 * @param db
 	 *            The instance of SQLiteDatabase.
 	 */
-    public QueryHandler(SQLiteDatabase db) {
+    public QueryHandler(SupportSQLiteDatabase db) {
 		mDatabase = db;
 	}
 

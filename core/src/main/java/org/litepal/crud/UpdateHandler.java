@@ -17,16 +17,8 @@
 package org.litepal.crud;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
-
-import org.litepal.Operator;
-import org.litepal.annotation.Encrypt;
-import org.litepal.crud.model.AssociationsInfo;
-import org.litepal.exceptions.LitePalSupportException;
-import org.litepal.util.BaseUtility;
-import org.litepal.util.DBUtility;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -34,7 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.litepal.Operator;
+import org.litepal.annotation.Encrypt;
+import org.litepal.crud.model.AssociationsInfo;
+import org.litepal.exceptions.LitePalSupportException;
+import org.litepal.util.BaseUtility;
+import org.litepal.util.DBUtility;
 
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 import static org.litepal.util.BaseUtility.changeCase;
 
 /**
@@ -54,7 +53,7 @@ public class UpdateHandler extends DataHandler {
 	 * @param db
 	 *            The instance of SQLiteDatabase.
 	 */
-    public UpdateHandler(SQLiteDatabase db) {
+    public UpdateHandler(SupportSQLiteDatabase db) {
 		mDatabase = db;
 	}
 
@@ -83,7 +82,7 @@ public class UpdateHandler extends DataHandler {
 		putFieldsValue(baseObj, supportedFields, values);
 		putFieldsToDefaultValue(baseObj, values, id);
 		if (values.size() > 0) {
-			return mDatabase.update(baseObj.getTableName(), values, "id = " + id, null);
+			return mDatabase.update(baseObj.getTableName(), CONFLICT_IGNORE, values, "id = " + id, null);
 		}
 		return 0;
 	}
@@ -105,7 +104,7 @@ public class UpdateHandler extends DataHandler {
     public int onUpdate(Class<?> modelClass, long id, ContentValues values) {
 		if (values.size() > 0) {
             convertContentValues(values);
-            return mDatabase.update(getTableName(modelClass), values, "id = " + id, null);
+            return mDatabase.update(getTableName(modelClass), CONFLICT_IGNORE, values, "id = " + id, null);
 		}
 		return 0;
 	}
@@ -199,7 +198,7 @@ public class UpdateHandler extends DataHandler {
 	private int doUpdateAllAction(String tableName, ContentValues values, String... conditions) {
 		BaseUtility.checkConditionsCorrect(conditions);
 		if (values.size() > 0) {
-			return mDatabase.update(tableName, values, getWhereClause(conditions),
+			return mDatabase.update(tableName, CONFLICT_IGNORE, values, getWhereClause(conditions),
 					getWhereArgs(conditions));
 		}
 		return 0;
@@ -309,7 +308,7 @@ public class UpdateHandler extends DataHandler {
 			values.put(fkName, id);
 			Set<Long> ids = associatedModelMap.get(associatedTable);
 			if (ids != null && !ids.isEmpty()) {
-				return mDatabase.update(associatedTable, values, getWhereOfIdsWithOr(ids), null);
+				return mDatabase.update(associatedTable, CONFLICT_IGNORE, values, getWhereOfIdsWithOr(ids), null);
 			}
 		}
 		return 0;
@@ -365,7 +364,7 @@ public class UpdateHandler extends DataHandler {
                                 Class<?>[] parameterTypes = new Class[] { String.class, getGenericTypeClass(field) };
                                 DynamicExecutor.send(values, "put", parameters, values.getClass(), parameterTypes);
                             }
-                            mDatabase.insert(tableName, null, values);
+                            mDatabase.insert(tableName, CONFLICT_IGNORE, values);
                         }
                     }
                 }

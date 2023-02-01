@@ -16,11 +16,16 @@
 
 package org.litepal.litepalsample.model;
 
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 import org.litepal.annotation.Column;
 import org.litepal.crud.LitePalSupport;
 
+@Entity(tableName = "song")
 public class Song extends LitePalSupport {
 
+	@PrimaryKey
 	private long id;
 
 	@Column(index = true)
@@ -31,6 +36,7 @@ public class Song extends LitePalSupport {
 
 	private String duration;
 
+	@Ignore
 	private Album album;
 
 	public long getId() {
@@ -73,4 +79,14 @@ public class Song extends LitePalSupport {
 		this.album = album;
 	}
 
+	public Song(long id, String name, String lyric, String duration) {
+		this.id = id;
+		this.name = name;
+		this.lyric = lyric;
+		this.duration = duration;
+	}
+
+	@Ignore
+	public Song() {
+	}
 }

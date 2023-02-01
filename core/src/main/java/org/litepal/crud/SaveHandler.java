@@ -17,21 +17,20 @@
 package org.litepal.crud;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-
-import org.litepal.annotation.Encrypt;
-import org.litepal.crud.model.AssociationsInfo;
-import org.litepal.exceptions.LitePalSupportException;
-import org.litepal.util.DBUtility;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.litepal.annotation.Encrypt;
+import org.litepal.crud.model.AssociationsInfo;
+import org.litepal.exceptions.LitePalSupportException;
+import org.litepal.util.DBUtility;
 
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 import static org.litepal.util.BaseUtility.changeCase;
 
 /**
@@ -56,7 +55,7 @@ public class SaveHandler extends DataHandler {
 	 * @param db
 	 *            The instance of SQLiteDatabase.
 	 */
-    public SaveHandler(SQLiteDatabase db) {
+    public SaveHandler(SupportSQLiteDatabase db) {
         values = new ContentValues();
 		mDatabase = db;
 	}
@@ -181,7 +180,7 @@ public class SaveHandler extends DataHandler {
         if (values.size() == 0) {
             values.putNull("id");
         }
-		return mDatabase.insert(baseObj.getTableName(), null, values);
+		return mDatabase.insert(baseObj.getTableName(), CONFLICT_IGNORE, values);
 	}
 
 	/**
@@ -259,7 +258,7 @@ public class SaveHandler extends DataHandler {
 	 */
 	private void updating(LitePalSupport baseObj, ContentValues values) {
 	    if (values.size() > 0) {
-            mDatabase.update(baseObj.getTableName(), values, "id = ?",
+            mDatabase.update(baseObj.getTableName(), CONFLICT_IGNORE, values, "id = ?",
                     new String[]{String.valueOf(baseObj.baseObjId)});
         }
 	}
@@ -393,7 +392,7 @@ public class SaveHandler extends DataHandler {
             values.put(fkName, baseObj.baseObjId);
 			Set<Long> ids = associatedModelMap.get(associatedTableName);
 			if (ids != null && !ids.isEmpty()) {
-				mDatabase.update(associatedTableName, values, getWhereOfIdsWithOr(ids), null);
+				mDatabase.update(associatedTableName, CONFLICT_IGNORE, values, getWhereOfIdsWithOr(ids), null);
 			}
 		}
 	}
@@ -412,7 +411,7 @@ public class SaveHandler extends DataHandler {
 			ContentValues values = new ContentValues();
 			values.putNull(fkColumnName);
             String whereClause = fkColumnName + " = " + baseObj.baseObjId;
-			mDatabase.update(associatedTableName, values, whereClause, null);
+			mDatabase.update(associatedTableName, CONFLICT_IGNORE, values, whereClause, null);
 		}
 	}
 
@@ -440,7 +439,7 @@ public class SaveHandler extends DataHandler {
                     values.clear();
                     values.put(getForeignKeyColumnName(baseObj.getTableName()), baseObj.baseObjId);
                     values.put(getForeignKeyColumnName(associatedTableName), associatedId);
-					mDatabase.insert(joinTableName, null, values);
+					mDatabase.insert(joinTableName, CONFLICT_IGNORE, values);
 				}
 			}
 		}
@@ -524,7 +523,7 @@ public class SaveHandler extends DataHandler {
                         Class<?>[] parameterTypes = new Class[] { String.class, getGenericTypeClass(field) };
                         DynamicExecutor.send(values, "put", parameters, values.getClass(), parameterTypes);
                     }
-                    mDatabase.insert(tableName, null, values);
+                    mDatabase.insert(tableName, CONFLICT_IGNORE, values);
                 }
             }
         }

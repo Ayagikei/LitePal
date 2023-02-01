@@ -16,22 +16,20 @@
 
 package org.litepal.crud;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
-
-import org.litepal.Operator;
-import org.litepal.crud.model.AssociationsInfo;
-import org.litepal.exceptions.LitePalSupportException;
-import org.litepal.util.BaseUtility;
-import org.litepal.util.Const;
-import org.litepal.util.DBUtility;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.litepal.Operator;
+import org.litepal.crud.model.AssociationsInfo;
+import org.litepal.exceptions.LitePalSupportException;
+import org.litepal.util.BaseUtility;
+import org.litepal.util.Const;
+import org.litepal.util.DBUtility;
 
 /**
  * This is a component under LitePalSupport. It deals with the deleting stuff as
@@ -58,7 +56,7 @@ public class DeleteHandler extends DataHandler {
 	 * @param db
 	 *            The instance of SQLiteDatabase.
 	 */
-    public DeleteHandler(SQLiteDatabase db) {
+    public DeleteHandler(SupportSQLiteDatabase db) {
 		mDatabase = db;
 	}
 

@@ -20,7 +20,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,14 +27,13 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-
+import androidx.appcompat.app.AppCompatActivity;
+import java.util.ArrayList;
+import java.util.List;
 import org.litepal.litepalsample.R;
 import org.litepal.litepalsample.adapter.DataArrayAdapter;
 import org.litepal.litepalsample.model.Singer;
 import org.litepal.tablemanager.Connector;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class UpdateSampleActivity extends AppCompatActivity implements OnClickListener {
 
@@ -138,7 +136,7 @@ public class UpdateSampleActivity extends AppCompatActivity implements OnClickLi
 				mList.add(columnList);
 				Cursor cursor = null;
 				try {
-					cursor = Connector.getDatabase().rawQuery("select * from singer order by id",
+					cursor = Connector.getDatabase().query("select * from singer order by id",
 							null);
 					if (cursor.moveToFirst()) {
 						do {

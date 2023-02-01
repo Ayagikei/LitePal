@@ -18,9 +18,12 @@ package org.litepal.tablemanager;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 import org.litepal.exceptions.DatabaseGenerateException;
 import org.litepal.tablemanager.model.AssociationsModel;
 import org.litepal.tablemanager.model.ColumnModel;
@@ -30,10 +33,7 @@ import org.litepal.util.Const;
 import org.litepal.util.DBUtility;
 import org.litepal.util.LitePalLog;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 
 /**
  * When models have associations such as one2one, many2one or many2many, tables
@@ -48,7 +48,7 @@ import java.util.Locale;
  */
 public abstract class AssociationCreator extends Generator {
 
-	protected abstract void createOrUpgradeTable(SQLiteDatabase db, boolean force);
+	protected abstract void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force);
 
 	/**
 	 * {@link org.litepal.tablemanager.AssociationCreator} analyzes two things. Add associations
@@ -56,7 +56,7 @@ public abstract class AssociationCreator extends Generator {
 	 * tables.
 	 */
 	@Override
-	protected void addOrUpdateAssociation(SQLiteDatabase db, boolean force) {
+	protected void addOrUpdateAssociation(SupportSQLiteDatabase db, boolean force) {
 		addAssociations(getAllAssociations(), db, force);
 	}
 
@@ -232,18 +232,18 @@ public abstract class AssociationCreator extends Generator {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	protected void giveTableSchemaACopy(String tableName, int tableType, SQLiteDatabase db) {
+	protected void giveTableSchemaACopy(String tableName, int tableType, SupportSQLiteDatabase db) {
 		StringBuilder sql = new StringBuilder("select * from ");
 		sql.append(Const.TableSchema.TABLE_NAME);
 		LitePalLog.d(TAG, "giveTableSchemaACopy SQL is >> " + sql);
 		Cursor cursor = null;
 		try {
-			cursor = db.rawQuery(sql.toString(), null);
+			cursor = db.query(sql.toString(), null);
 			if (isNeedtoGiveACopy(cursor, tableName)) {
 				ContentValues values = new ContentValues();
 				values.put(Const.TableSchema.COLUMN_NAME, BaseUtility.changeCase(tableName));
 				values.put(Const.TableSchema.COLUMN_TYPE, tableType);
-				db.insert(Const.TableSchema.TABLE_NAME, null, values);
+				db.insert(Const.TableSchema.TABLE_NAME, CONFLICT_IGNORE, values);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -321,7 +321,7 @@ public abstract class AssociationCreator extends Generator {
 	 * @param force
 	 *            Drop the table first if it already exists.
 	 */
-	private void addAssociations(Collection<AssociationsModel> associatedModels, SQLiteDatabase db,
+	private void addAssociations(Collection<AssociationsModel> associatedModels, SupportSQLiteDatabase db,
 			boolean force) {
 		for (AssociationsModel associationModel : associatedModels) {
 			if (Const.Model.MANY_TO_ONE == associationModel.getAssociationType()
@@ -355,7 +355,7 @@ public abstract class AssociationCreator extends Generator {
 	 *            Drop the table first if it already exists.
 	 */
 	private void createIntermediateTable(String tableName, String associatedTableName,
-			SQLiteDatabase db, boolean force) {
+			SupportSQLiteDatabase db, boolean force) {
         List<ColumnModel> columnModelList = new ArrayList<>();
         ColumnModel column1 = new ColumnModel();
         column1.setColumnName(tableName + "_id");
@@ -391,7 +391,7 @@ public abstract class AssociationCreator extends Generator {
      * @param force
      *          Drop the table first if it already exists.
      */
-    private void createGenericTable(GenericModel genericModel, SQLiteDatabase db, boolean force) {
+    private void createGenericTable(GenericModel genericModel, SupportSQLiteDatabase db, boolean force) {
         String tableName = genericModel.getTableName();
         String valueColumnName = genericModel.getValueColumnName();
         String valueColumnType = genericModel.getValueColumnType();
@@ -434,7 +434,7 @@ public abstract class AssociationCreator extends Generator {
 	 *            Instance of SQLiteDatabase.
 	 */
 	protected void addForeignKeyColumn(String tableName, String associatedTableName,
-			String tableHoldsForeignKey, SQLiteDatabase db) {
+			String tableHoldsForeignKey, SupportSQLiteDatabase db) {
 		if (DBUtility.isTableExists(tableName, db)) {
 			if (DBUtility.isTableExists(associatedTableName, db)) {
 				String foreignKeyColumn = null;

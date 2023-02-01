@@ -16,17 +16,16 @@
 
 package org.litepal.tablemanager;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteQueryBuilder;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.litepal.tablemanager.model.TableModel;
 import org.litepal.util.BaseUtility;
 import org.litepal.util.Const;
 import org.litepal.util.LitePalLog;
-
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
 /**
  * When developers defined some model classes and define them in the mapping
@@ -51,7 +50,7 @@ public class Dropper extends AssociationUpdater {
 	 * anymore and can be dropped.
 	 */
 	@Override
-	protected void createOrUpgradeTable(SQLiteDatabase db, boolean force) {
+	protected void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force) {
 		mTableModels = getAllTableModels();
 		mDb = db;
 		dropTables();
@@ -77,7 +76,8 @@ public class Dropper extends AssociationUpdater {
 		List<String> dropTableNames = new ArrayList<>();
 		Cursor cursor = null;
 		try {
-			cursor = mDb.query(Const.TableSchema.TABLE_NAME, null, null, null, null, null, null);
+			String sql = SQLiteQueryBuilder.buildQueryString(false, Const.TableSchema.TABLE_NAME, null, null, null, null, null, null);
+			cursor = mDb.query(sql);
 			if (cursor.moveToFirst()) {
 				do {
 					String tableName = cursor.getString(cursor

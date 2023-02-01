@@ -16,21 +16,19 @@
 
 package org.litepal.tablemanager;
 
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.litepal.parser.LitePalAttr;
 import org.litepal.tablemanager.model.AssociationsModel;
 import org.litepal.tablemanager.model.ColumnModel;
 import org.litepal.tablemanager.model.GenericModel;
 import org.litepal.tablemanager.model.TableModel;
+import org.litepal.util.BaseUtility;
 import org.litepal.util.Const;
 import org.litepal.util.DBUtility;
-import org.litepal.util.BaseUtility;
 import org.litepal.util.LitePalLog;
-
-import android.database.sqlite.SQLiteDatabase;
 
 /**
  * Upgrade the associations between model classes into tables. Creating new
@@ -53,7 +51,7 @@ public abstract class AssociationUpdater extends Creator {
 	/**
 	 * Instance of SQLiteDatabase.
 	 */
-	protected SQLiteDatabase mDb;
+	protected SupportSQLiteDatabase mDb;
 
 	/**
 	 * Analysis the {@link org.litepal.tablemanager.model.TableModel} by the purpose of subclasses, and
@@ -61,7 +59,7 @@ public abstract class AssociationUpdater extends Creator {
 	 * is totally delegated to the subclasses.
 	 */
 	@Override
-	protected abstract void createOrUpgradeTable(SQLiteDatabase db, boolean force);
+	protected abstract void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force);
 
 	/**
 	 * {@link org.litepal.tablemanager.AssociationUpdater} does two jobs. Removing foreign key columns
@@ -69,7 +67,7 @@ public abstract class AssociationUpdater extends Creator {
 	 * join tables when two models are not associated anymore.
 	 */
 	@Override
-	protected void addOrUpdateAssociation(SQLiteDatabase db, boolean force) {
+	protected void addOrUpdateAssociation(SupportSQLiteDatabase db, boolean force) {
 		mAssociationModels = getAllAssociations();
 		mDb = db;
 		removeAssociations();
@@ -137,7 +135,7 @@ public abstract class AssociationUpdater extends Creator {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	protected void dropTables(List<String> dropTableNames, SQLiteDatabase db) {
+	protected void dropTables(List<String> dropTableNames, SupportSQLiteDatabase db) {
 		if (dropTableNames != null && !dropTableNames.isEmpty()) {
             List<String> dropTableSQLS = new ArrayList<>();
 			for (int i = 0; i < dropTableNames.size(); i++) {

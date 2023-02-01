@@ -17,21 +17,20 @@
 package org.litepal.crud;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-
+import android.database.sqlite.SQLiteQueryBuilder;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import org.litepal.LitePalBase;
 import org.litepal.crud.model.AssociationsInfo;
 import org.litepal.tablemanager.Connector;
 import org.litepal.util.BaseUtility;
 import org.litepal.util.DBUtility;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-
 /**
  * Deals analysis work when comes to two models are associated with Many2Many
  * associations.
- * 
+ *
  * @author Tony Green
  * @since 1.1
  */
@@ -45,7 +44,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	 * associations. Besides the
 	 * {@link LitePalSupport#addAssociatedModelForJoinTable(String, long)} will be called
 	 * here to put right values into tables.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associationInfo
@@ -79,7 +78,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	/**
 	 * This add an empty set for {@link LitePalSupport#associatedModelsMapForJoinTable}.
      * Might use for updating intermediate join table.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associationInfo
@@ -92,7 +91,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	/**
 	 * Force to build bidirectional associations for the associated model. If it
 	 * has already built, ignoring the rest process.
-	 * 
+	 *
 	 * @param associatedModelCollection
 	 *            The associated models collection of the associated model. Add
 	 *            self model into it if it doesn't contain self model yet.
@@ -111,7 +110,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	 * will be executed below. Then add the id of associated model into
 	 * {@link LitePalSupport#associatedModelsMapForJoinTable} for
      * inserting value into intermediate join table after baseObj is saved.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associatedModel
@@ -127,7 +126,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	/**
 	 * Get the associated table name by {@link org.litepal.crud.model.AssociationsInfo} after case
 	 * changed.
-	 * 
+	 *
 	 * @param associationInfo
 	 *            To get the associated table name from.
 	 * @return The name of associated table with changed case.
@@ -142,7 +141,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	 * already saved into intermediate join table.<br>
 	 * Make sure baseObj and associatedModel are saved already, or the result
 	 * might be wrong.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associatedModel
@@ -154,12 +153,12 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	@Deprecated
 	private boolean isDataExists(LitePalSupport baseObj, LitePalSupport associatedModel) {
 		boolean exists = false;
-		SQLiteDatabase db = Connector.getDatabase();
+		SupportSQLiteDatabase db = Connector.getDatabase();
 		Cursor cursor = null;
 		try {
-			cursor = db.query(getJoinTableName(baseObj, associatedModel), null,
-					getSelection(baseObj, associatedModel),
-					getSelectionArgs(baseObj, associatedModel), null, null, null);
+			String sql = SQLiteQueryBuilder.buildQueryString(
+				false, getJoinTableName(baseObj, associatedModel), null, getSelection(baseObj, associatedModel) + " = ?", null, null, null, null);
+			cursor = mDatabase.query(sql, getSelectionArgs(baseObj, associatedModel));
 			exists = cursor.getCount() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -173,7 +172,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 	/**
 	 * Build the selection for querying the data in table. Column names are the
 	 * table names with _id as suffix.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associatedModel
@@ -191,7 +190,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 
 	/**
 	 * Build the selection arguments to fill selection clause.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associatedModel
@@ -206,7 +205,7 @@ public class Many2ManyAnalyzer extends AssociationsAnalyzer {
 
 	/**
 	 * Get the intermediate join table name for self model and associated model.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The baseObj currently want to persist or update.
 	 * @param associatedModel

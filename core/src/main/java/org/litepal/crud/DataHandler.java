@@ -18,21 +18,9 @@ package org.litepal.crud;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.util.SparseArray;
-
-import org.litepal.LitePalBase;
-import org.litepal.Operator;
-import org.litepal.annotation.Encrypt;
-import org.litepal.crud.model.AssociationsInfo;
-import org.litepal.exceptions.DatabaseGenerateException;
-import org.litepal.exceptions.LitePalSupportException;
-import org.litepal.tablemanager.model.GenericModel;
-import org.litepal.util.BaseUtility;
-import org.litepal.util.Const;
-import org.litepal.util.DBUtility;
-import org.litepal.util.cipher.CipherUtil;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -45,13 +33,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.litepal.LitePalBase;
+import org.litepal.Operator;
+import org.litepal.annotation.Encrypt;
+import org.litepal.crud.model.AssociationsInfo;
+import org.litepal.exceptions.DatabaseGenerateException;
+import org.litepal.exceptions.LitePalSupportException;
+import org.litepal.tablemanager.model.GenericModel;
+import org.litepal.util.BaseUtility;
+import org.litepal.util.Const;
+import org.litepal.util.DBUtility;
+import org.litepal.util.cipher.CipherUtil;
 
 import static org.litepal.util.BaseUtility.changeCase;
 
 /**
  * This is the base class for CRUD component. All the common actions which can
  * be shared with each function in CURD component will be put here.
- * 
+ *
  * @author Tony Green
  * @since 1.1
  */
@@ -61,7 +60,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Instance of SQLiteDatabase, use to do the CRUD job.
 	 */
-	SQLiteDatabase mDatabase;
+	SupportSQLiteDatabase mDatabase;
 
 	/**
 	 * Store empty model instance. In case to create each time when checking
@@ -82,7 +81,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Query the table of the given model, returning a model list over the
 	 * result set.
-	 * 
+	 *
 	 * @param modelClass
 	 *            The model to compile the query against.
 	 * @param columns
@@ -130,8 +129,9 @@ abstract class DataHandler extends LitePalBase {
             List<Field> supportedGenericFields = getSupportedGenericFields(modelClass.getName());
             String[] customizedColumns = DBUtility.convertSelectClauseToValidNames(getCustomizedColumns(columns, supportedGenericFields, foreignKeyAssociations));
             String tableName = getTableName(modelClass);
-			cursor = mDatabase.query(tableName, customizedColumns, selection, selectionArgs,
-					groupBy, having, orderBy, limit);
+			String sql = SQLiteQueryBuilder.buildQueryString(
+				false, tableName, customizedColumns, selection, groupBy, having, orderBy, limit);
+			cursor = mDatabase.query(sql, selectionArgs);
 			if (cursor.moveToFirst()) {
                 SparseArray<QueryInfoCache> queryInfoCacheSparseArray = new SparseArray<>();
                 Map<Field, GenericModel> genericModelMap = new HashMap<>();
@@ -161,7 +161,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Handles the math query of the given table.
-	 * 
+	 *
 	 * @param tableName
 	 *            Which table to query from.
 	 * @param columns
@@ -181,8 +181,10 @@ abstract class DataHandler extends LitePalBase {
 		Cursor cursor = null;
 		T result = null;
 		try {
-			cursor = mDatabase.query(tableName, columns, getWhereClause(conditions),
-					getWhereArgs(conditions), null, null, null);
+			String sql = SQLiteQueryBuilder.buildQueryString(
+				false, tableName, columns, getWhereClause(conditions), null, null, null, null);
+			cursor = mDatabase.query(sql, getWhereArgs(conditions));
+
 			if (cursor.moveToFirst()) {
 				Class<?> cursorClass = cursor.getClass();
 				Method method = cursorClass.getMethod(genGetColumnMethod(type), int.class);
@@ -201,7 +203,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Assign the generated id value to {@link LitePalSupport#baseObjId}. This
 	 * value will be used as identify of this model for system use.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The class of base object.
 	 * @param id
@@ -218,7 +220,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Iterate all the fields passed in. Each field calls
 	 * {@link #putFieldsValueDependsOnSaveOrUpdate(LitePalSupport, java.lang.reflect.Field, android.content.ContentValues)}
 	 * if it's not id field.
-	 * 
+	 *
 	 * @param baseObj
 	 *            Current model to persist or update.
 	 * @param supportedFields
@@ -241,7 +243,7 @@ abstract class DataHandler extends LitePalBase {
 	 * should use which <b>put</b> method cause the field type isn't clear. So
 	 * the reflection API is necessary here to put values into ContentValues
 	 * with dynamically getting field type to put value.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The class of base object.
 	 * @param field
@@ -317,7 +319,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get the field value for model.
-	 * 
+	 *
 	 * @param dataSupport
 	 *            The model to get method from.
 	 * @param field
@@ -335,7 +337,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Set the field value for model.
-	 * 
+	 *
 	 * @param dataSupport
 	 *            The model to set method to.
 	 * @param field
@@ -353,7 +355,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Find all the associated models of currently model. Then add all the
 	 * associated models into baseObj.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The class of base object.
 	 */
@@ -372,10 +374,10 @@ abstract class DataHandler extends LitePalBase {
 			throw new LitePalSupportException(e.getMessage(), e);
 		}
 	}
-	
+
 	/**
 	 * Get the associated model.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The instance of self model.
 	 * @param associationInfo
@@ -391,7 +393,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Get the associated models collection. When it comes to many2one or
 	 * many2many association. A model may have lots of associated models.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The instance of self model.
 	 * @param associationInfo
@@ -409,7 +411,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Create an empty instance of baseObj if it hasn't created one yet. If
 	 * there's already an empty model existed in {@link #tempEmptyModel}, no
 	 * need to create a new one.
-	 * 
+	 *
 	 * @param baseObj
 	 *            Current model to update.
 	 * @return An empty instance of baseObj.
@@ -436,7 +438,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get the WHERE clause to apply when updating or deleting multiple rows.
-	 * 
+	 *
 	 * @param conditions
 	 *            A string array representing the WHERE part of an SQL
 	 *            statement.
@@ -456,7 +458,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Get the WHERE arguments to fill into where clause when updating or
 	 * deleting multiple rows.
-	 * 
+	 *
 	 * @param conditions
 	 *            A string array representing the WHERE part of an SQL
 	 *            statement.
@@ -478,7 +480,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Check the passing conditions represent to affect all lines or not. <br>
 	 * Do not pass anything to the conditions parameter means affect all lines.
-	 * 
+	 *
 	 * @param conditions
 	 *            An array representing the WHERE part of an SQL statement.
 	 * @return Affect all lines or not.
@@ -490,7 +492,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Get the where clause by the passed in id collection to apply multiple
 	 * rows.
-	 * 
+	 *
 	 * @param ids
 	 *            The id collection.
 	 * @return The where clause to execute.
@@ -511,7 +513,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get the where clause by the passed in id array to apply multiple rows.
-	 * 
+	 *
 	 * @param ids
 	 *            The id collection.
 	 * @return The where clause to execute.
@@ -534,7 +536,7 @@ abstract class DataHandler extends LitePalBase {
 	 * When executing {@link #getFieldValue(LitePalSupport, Field)} or
 	 * {@link #setFieldValue(LitePalSupport, Field, Object)}, the
 	 * dataSupport and field passed in should be protected from null value.
-	 * 
+	 *
 	 * @param dataSupport
 	 *            The object to execute set or get method.
 	 * @param field
@@ -547,7 +549,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get the name of intermediate join table.
-	 * 
+	 *
 	 * @param baseObj
 	 *            Current model.
 	 * @param associatedTableName
@@ -562,7 +564,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Get the simple name of modelClass. Then change the case by the setting
 	 * rule in litepal.xml as table name.
-	 * 
+	 *
 	 * @param modelClass
 	 *            Class of model to get table name from.
 	 * @return The table name of model.
@@ -570,13 +572,13 @@ abstract class DataHandler extends LitePalBase {
 	protected String getTableName(Class<?> modelClass) {
 		return BaseUtility.changeCase(DBUtility.getTableNameByClassName(modelClass.getName()));
 	}
-	
+
 	/**
 	 * Creates an instance from the passed in class. It will always create an
 	 * instance no matter how the constructor defines in the class file. A best
 	 * suit constructor will be find by calling
 	 * {@link #findBestSuitConstructor(Class)} method.
-	 * 
+	 *
 	 * @param modelClass
 	 *            The class to create instance.
 	 * @return An instance by the passed in class.
@@ -594,7 +596,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Finds the best suit constructor for creating an instance of a class. The
 	 * principle is that the constructor with least parameters and has no self
 	 * type parameter will be the best suit one to create instance.
-	 * 
+	 *
 	 * @param modelClass
 	 *            To get constructors from.
 	 * @return The best suit constructor.
@@ -637,12 +639,12 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Depends on the passed in constructor, creating a parameters array with
 	 * initialized values for the constructor.
-	 * 
+	 *
 	 * @param modelClass
 	 *            The original class the this constructor belongs to.
 	 * @param constructor
 	 *            The constructor to get parameters for it.
-	 * 
+	 *
 	 * @return A parameters array with initialized values.
 	 */
 	protected Object[] getConstructorParams(Class<?> modelClass, Constructor<?> constructor) {
@@ -656,7 +658,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get value from database by cursor, then set the value into modelInstance.
-	 * 
+	 *
 	 * @param modelInstance
 	 *            The model to set into.
 	 * @param supportedFields
@@ -759,9 +761,12 @@ abstract class DataHandler extends LitePalBase {
                 getMethodName = genericModel.getGetMethodName();
             }
             try {
-				cursor = mDatabase.query(tableName, null, genericValueIdColumnName + " = ?",
-						new String[]{String.valueOf(baseObj.baseObjId)}, null, null, null);
-                if (cursor.moveToFirst()) {
+				String sql = SQLiteQueryBuilder.buildQueryString(
+					false, tableName, null, genericValueIdColumnName + " = ?", null, null, null, null);
+				cursor = mDatabase.query(sql, new String[]{String.valueOf(baseObj.baseObjId)});
+
+
+				if (cursor.moveToFirst()) {
                     do {
                         int columnIndex = cursor.getColumnIndex(BaseUtility.changeCase(genericValueColumnName));
                         if (columnIndex != -1) {
@@ -779,7 +784,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Get the foreign key associations of the specified class.
-	 * 
+	 *
 	 * @param className
 	 *            The full class name.
 	 * @param isEager
@@ -798,7 +803,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Get the types of parameters for {@link android.content.ContentValues#put}. Need two
 	 * parameters. First is String type for key. Second is depend on field for
 	 * value.
-	 * 
+	 *
 	 * @param field
 	 *            The field to get parameter type.
 	 * @param fieldValue
@@ -829,7 +834,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Each primitive type has a corresponding object type. For example int and
 	 * Integer, boolean and Boolean. This method gives a way to turn primitive
 	 * type into object type.
-	 * 
+	 *
 	 * @param primitiveType
 	 *            The class of primitive type.
 	 * @return If the passed in parameter is primitive type, return a
@@ -864,7 +869,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Gives the passed in parameter an initialized value. If the parameter is
 	 * basic data type or the corresponding object data type, return the default
 	 * data. Or return null.
-	 * 
+	 *
 	 * @param modelClass
 	 *            The original class the this constructor belongs to.
 	 * @param paramType
@@ -908,7 +913,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Judge if the field is char or Character type.
-	 * 
+	 *
 	 * @param field
 	 *            Field to judge type.
 	 * @return Return true if it's char or Character. Otherwise return false.
@@ -923,7 +928,7 @@ abstract class DataHandler extends LitePalBase {
 	 * special when use IDE to generate getter and setter method. The primitive
 	 * boolean type won't be like <b>getXxx</b>, it's something like
 	 * <b>isXxx</b>.
-	 * 
+	 *
 	 * @param field
 	 *            Use field to get field type.
 	 * @return If it's primitive boolean type return true, else return false.
@@ -938,7 +943,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Check the value of field is default value or not if current action is
 	 * updating. If it's not default value, put it into ContentValues. Otherwise
 	 * ignore it.
-	 * 
+	 *
 	 * @param baseObj
 	 *            Current model to persist or update.
 	 * @param field
@@ -960,7 +965,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Current action is updating or not. Note that update the record by saving
 	 * the already saved record again belongs to save action.
-	 * 
+	 *
 	 * @return If current action is updating return true. Otherwise return
 	 *         false.
 	 */
@@ -971,7 +976,7 @@ abstract class DataHandler extends LitePalBase {
 	/**
 	 * Current action is saving or not. Note that update the record by saving
 	 * the already saved record again belongs to save action.
-	 * 
+	 *
 	 * @return If current action is saving return true. Otherwise return false.
 	 */
 	private boolean isSaving() {
@@ -982,7 +987,7 @@ abstract class DataHandler extends LitePalBase {
 	 * Analyze the passed in field. Check if this field is with default value.
 	 * The baseObj need a default constructor or {@link LitePalSupportException}
 	 * will be thrown.
-	 * 
+	 *
 	 * @param baseObj
 	 *            Current model to update.
 	 * @param field
@@ -1005,7 +1010,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Generate the getter method name by field, following the Android Studio rule.
-	 * 
+	 *
 	 * @param field
 	 *            The field to generate getter method from.
 	 * @return The generated getter method name.
@@ -1030,7 +1035,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Generate the setter method name by field, following the Android Studio rule.
-	 * 
+	 *
 	 * @param field
 	 *            The field to generate setter method from.
 	 * @return The generated setter method name.
@@ -1054,7 +1059,7 @@ abstract class DataHandler extends LitePalBase {
      * field type is char, generate getString method. If field type is Date, generate
      * getLong method. If filed type is Integer, generate getInt method. If field type
      * is bytes, generate getBlob method.
-	 * 
+	 *
 	 * @param field
 	 *            To generate getType method for cursor.
 	 * @return The getType method for cursor.
@@ -1075,7 +1080,7 @@ abstract class DataHandler extends LitePalBase {
 	 * field type is char, generate getString method. If field type is Date, generate
      * getLong method. If filed type is Integer, generate getInt method. If field type
      * is bytes, generate getBlob method.
-	 * 
+	 *
 	 * @param fieldType
 	 *            To generate getType method for cursor.
 	 * @return The getType method for cursor.
@@ -1109,7 +1114,7 @@ abstract class DataHandler extends LitePalBase {
 	 * already, just return it. If contains an _id column, rename it to id. If
 	 * not, an add id column then return. If it contains generic columns them
      * from query and use them in supported generic fields.
-	 * 
+	 *
 	 * @param columns
 	 *            The original columns that passed in.
 	 * @param foreignKeyAssociations
@@ -1179,7 +1184,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Analyze the associations for the specified class.
-	 * 
+	 *
 	 * @param className
 	 *            The full class name.
 	 */
@@ -1211,7 +1216,7 @@ abstract class DataHandler extends LitePalBase {
 
 	/**
 	 * Finds the associated models of baseObj, then set them into baseObj.
-	 * 
+	 *
 	 * @param baseObj
 	 *            The class of base object.
 	 */
@@ -1245,10 +1250,9 @@ abstract class DataHandler extends LitePalBase {
 							.getTableNameByClassName(info.getSelfClassName()));
 					String associatedTableName = DBUtility
 							.getTableNameByClassName(associatedClassName);
-					cursor = mDatabase.query(BaseUtility.changeCase(associatedTableName), null,
-							foreignKeyColumn + "=?",
-							new String[]{String.valueOf(baseObj.baseObjId)}, null, null,
-							null, null);
+					String sql = SQLiteQueryBuilder.buildQueryString(
+						false, BaseUtility.changeCase(associatedTableName), null, foreignKeyColumn + "=?", null, null, null, null);
+					cursor = mDatabase.query(sql, new String[]{String.valueOf(baseObj.baseObjId)});
 				}
 				if (cursor != null && cursor.moveToFirst()) {
                     SparseArray<QueryInfoCache> queryInfoCacheSparseArray = new SparseArray<>();

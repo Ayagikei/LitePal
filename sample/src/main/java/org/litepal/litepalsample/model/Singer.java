@@ -16,21 +16,28 @@
 
 package org.litepal.litepalsample.model;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.litepal.crud.LitePalSupport;
 
+@Entity(tableName = "singer")
 public class Singer extends LitePalSupport {
 
+	@PrimaryKey
 	private long id;
 
 	private String name;
 
 	private int age;
 
+	@ColumnInfo(name = "ismale")
 	private boolean isMale;
 
+	@Ignore
 	private List<Album> albums = new ArrayList<Album>();
 
 	public long getId() {
@@ -73,4 +80,14 @@ public class Singer extends LitePalSupport {
 		this.albums = albums;
 	}
 
+	public Singer(long id, String name, int age, boolean isMale) {
+		this.id = id;
+		this.name = name;
+		this.age = age;
+		this.isMale = isMale;
+	}
+
+	@Ignore
+	public Singer() {
+	}
 }

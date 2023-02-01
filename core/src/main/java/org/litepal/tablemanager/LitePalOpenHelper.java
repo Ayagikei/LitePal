@@ -16,16 +16,7 @@
 
 package org.litepal.tablemanager;
 
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
-import android.database.sqlite.SQLiteOpenHelper;
-
-import org.litepal.LitePalApplication;
-import org.litepal.Operator;
-import org.litepal.parser.LitePalAttr;
-import org.litepal.tablemanager.callback.DatabaseListener;
-import org.litepal.util.SharedUtil;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 
 /**
  * The database helper to generate and manage the tables. It will automate
@@ -40,73 +31,73 @@ import org.litepal.util.SharedUtil;
  * @author Tony Green
  * @since 1.0
  */
-class LitePalOpenHelper extends SQLiteOpenHelper {
-    public static final String TAG = "LitePalHelper";
-
-    /**
-     * The standard constructor for SQLiteOpenHelper.
-     *
-     * @param context
-     *            To use to open or create the database.
-     * @param name
-     *            The database file.
-     * @param factory
-     *            To use for creating cursor objects, or null for the default
-     *            version number of the database (starting at 1); if the
-     *            database is older, onUpgrade.
-     * @param version
-     *            (SQLiteDatabase, int, int) will be used to upgrade the
-     *            database; if the database is newer,
-     *            onDowngrade(SQLiteDatabase, int, int) will be used to
-     *            downgrade the database
-     */
-    LitePalOpenHelper(Context context, String name, CursorFactory factory, int version) {
-        super(context, name, factory, version);
-    }
-
-    /**
-     * A simple constructor for SQLiteOpenHelper with null for CursorFactory as
-     * default.
-     *
-     * @param dbName
-     *            The database file.
-     * @param version
-     *            (SQLiteDatabase, int, int) will be used to upgrade the
-     *            database; if the database is newer,
-     *            onDowngrade(SQLiteDatabase, int, int) will be used to
-     *            downgrade the database
-     */
-    LitePalOpenHelper(String dbName, int version) {
-        this(LitePalApplication.getContext(), dbName, null, version);
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        Generator.create(db);
-        final DatabaseListener listener = Operator.dBListener;
-        if (listener != null) {
-            LitePalApplication.sHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    listener.onCreate();
-                }
-            });
-        }
-    }
-
-    @Override
-    public void onUpgrade(SQLiteDatabase db, final int oldVersion, final int newVersion) {
-        Generator.upgrade(db);
-        SharedUtil.updateVersion(LitePalAttr.getInstance().getExtraKeyName(), newVersion);
-        final DatabaseListener listener = Operator.dBListener;
-        if (listener != null) {
-            LitePalApplication.sHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    listener.onUpgrade(oldVersion, newVersion);
-                }
-            });
-        }
-    }
-
-}
+//class LitePalOpenHelper implements SupportSQLiteOpenHelper {
+//    public static final String TAG = "LitePalHelper";
+//
+//    /**
+//     * The standard constructor for SQLiteOpenHelper.
+//     *
+//     * @param context
+//     *            To use to open or create the database.
+//     * @param name
+//     *            The database file.
+//     * @param factory
+//     *            To use for creating cursor objects, or null for the default
+//     *            version number of the database (starting at 1); if the
+//     *            database is older, onUpgrade.
+//     * @param version
+//     *            (SQLiteDatabase, int, int) will be used to upgrade the
+//     *            database; if the database is newer,
+//     *            onDowngrade(SQLiteDatabase, int, int) will be used to
+//     *            downgrade the database
+//     */
+//    LitePalOpenHelper(Context context, String name, CursorFactory factory, int version) {
+//        super(context, name, factory, version);
+//    }
+//
+//    /**
+//     * A simple constructor for SQLiteOpenHelper with null for CursorFactory as
+//     * default.
+//     *
+//     * @param dbName
+//     *            The database file.
+//     * @param version
+//     *            (SQLiteDatabase, int, int) will be used to upgrade the
+//     *            database; if the database is newer,
+//     *            onDowngrade(SQLiteDatabase, int, int) will be used to
+//     *            downgrade the database
+//     */
+//    LitePalOpenHelper(String dbName, int version) {
+//        this(LitePalApplication.getContext(), dbName, null, version);
+//    }
+//
+//    @Override
+//    public void onCreate(SupportSQLiteDatabase db) {
+//        Generator.create(db);
+//        final DatabaseListener listener = Operator.dBListener;
+//        if (listener != null) {
+//            LitePalApplication.sHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    listener.onCreate();
+//                }
+//            });
+//        }
+//    }
+//
+//    @Override
+//    public void onUpgrade(SQLiteDatabase db, final int oldVersion, final int newVersion) {
+//        Generator.upgrade(db);
+//        SharedUtil.updateVersion(LitePalAttr.getInstance().getExtraKeyName(), newVersion);
+//        final DatabaseListener listener = Operator.dBListener;
+//        if (listener != null) {
+//            LitePalApplication.sHandler.post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    listener.onUpgrade(oldVersion, newVersion);
+//                }
+//            });
+//        }
+//    }
+//
+//}

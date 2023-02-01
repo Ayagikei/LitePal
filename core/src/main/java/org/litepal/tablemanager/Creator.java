@@ -16,14 +16,12 @@
 
 package org.litepal.tablemanager;
 
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import java.util.ArrayList;
+import java.util.List;
 import org.litepal.tablemanager.model.TableModel;
 import org.litepal.util.Const;
 import org.litepal.util.DBUtility;
-
-import android.database.sqlite.SQLiteDatabase;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This is a subclass of Generator. Use to create tables. It will automatically
@@ -44,13 +42,13 @@ class Creator extends AssociationCreator {
 	 * table model's value.
 	 */
 	@Override
-	protected void createOrUpgradeTable(SQLiteDatabase db, boolean force) {
+	protected void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force) {
 		for (TableModel tableModel : getAllTableModels()) {
 			createOrUpgradeTable(tableModel, db, force);
 		}
 	}
 
-    protected void createOrUpgradeTable(TableModel tableModel, SQLiteDatabase db, boolean force) {
+    protected void createOrUpgradeTable(TableModel tableModel, SupportSQLiteDatabase db, boolean force) {
         execute(getCreateTableSQLs(tableModel, db, force), db);
         giveTableSchemaACopy(tableModel.getTableName(), Const.TableSchema.NORMAL_TABLE, db);
     }
@@ -69,7 +67,7 @@ class Creator extends AssociationCreator {
 	 * @return A SQL array contains drop table if it exists and create new
 	 *         table.
 	 */
-	protected List<String> getCreateTableSQLs(TableModel tableModel, SQLiteDatabase db, boolean force) {
+	protected List<String> getCreateTableSQLs(TableModel tableModel, SupportSQLiteDatabase db, boolean force) {
         List<String> sqls = new ArrayList<>();
 		if (force) {
             sqls.add(generateDropTableSQL(tableModel));

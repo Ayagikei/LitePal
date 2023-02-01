@@ -15,6 +15,7 @@
  */
 package org.litepal.crud
 
+import androidx.room.Ignore
 import org.litepal.Operator.handler
 import org.litepal.Operator.where
 import org.litepal.crud.async.SaveExecutor
@@ -73,6 +74,7 @@ protected constructor() {
      * automatically. Do not try to assign or modify it.
      */
     @JvmField
+    @Ignore
     var baseObjId: Long = 0
 
     /**
@@ -80,9 +82,10 @@ protected constructor() {
      * associations. Each corresponding table of these models contains a foreign
      * key column.
      */
-    val associatedModelsMapWithFK: MutableMap<String, MutableSet<Long>> by lazy {
+    @Ignore
+    val associatedModelsMapWithFK: MutableMap<String, MutableSet<Long>> =
         HashMap<String, MutableSet<Long>>()
-    }
+
     /**
      * Get the associated model's map of self model. It can be used for
      * associations actions of CRUD. The key is the name of associated model's
@@ -96,16 +99,18 @@ protected constructor() {
      * column. Instead self model has a foreign key column in the corresponding
      * table.
      */
-    val associatedModelsMapWithoutFK: MutableMap<String, Long>? by lazy {
+    @Ignore
+    val associatedModelsMapWithoutFK: MutableMap<String, Long>? =
         HashMap()
-    }
+
 
     /**
      * A map contains all the associated models' id with M2M association.
      */
-    val associatedModelsMapForJoinTable: MutableMap<String, MutableList<Long>> by lazy {
+    @Ignore
+    val associatedModelsMapForJoinTable: MutableMap<String, MutableList<Long>> =
         HashMap<String, MutableList<Long>>()
-    }
+
     /**
      * Get the foreign key name list to clear foreign key value in current
      * model's table.
@@ -117,6 +122,7 @@ protected constructor() {
      * and others, if current model holds a foreign key, it need to be cleared.
      * This list holds all the foreign key names that need to clear.
      */
+    @Ignore
     var listToClearSelfFK: MutableList<String>? = null
         get() {
             if (field == null) {
@@ -137,6 +143,7 @@ protected constructor() {
      * exists. This list holds all the associated table names that need to
      * clear.
      */
+    @Ignore
     var listToClearAssociatedFK: MutableList<String>? = null
         get() {
             if (field == null) {
@@ -156,6 +163,7 @@ protected constructor() {
      * A list holds all the field names which need to be updated into default
      * value of model.
      */
+    @Ignore
     var fieldsToSetToDefault: MutableList<String>? = null
         get() {
             if (field == null) {

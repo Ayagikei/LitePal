@@ -17,14 +17,10 @@
 package org.litepal.util;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.text.TextUtils;
 import android.util.Pair;
-
-import org.litepal.exceptions.DatabaseGenerateException;
-import org.litepal.tablemanager.model.ColumnModel;
-import org.litepal.tablemanager.model.TableModel;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,6 +29,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.litepal.exceptions.DatabaseGenerateException;
+import org.litepal.tablemanager.model.ColumnModel;
+import org.litepal.tablemanager.model.TableModel;
 
 /**
  * A utility class to help LitePal with some database actions. These actions can
@@ -198,13 +197,14 @@ public class DBUtility {
 	 * @return Return true if the table name is an intermediate table. Otherwise
 	 *         return false.
 	 */
-	public static boolean isIntermediateTable(String tableName, SQLiteDatabase db) {
+	public static boolean isIntermediateTable(String tableName, SupportSQLiteDatabase db) {
 		if (!TextUtils.isEmpty(tableName)) {
 			if (tableName.matches("[0-9a-zA-Z]+_[0-9a-zA-Z]+")) {
 				Cursor cursor = null;
 				try {
-					cursor = db.query(Const.TableSchema.TABLE_NAME, null, null, null, null, null,
-							null);
+					String sql = SQLiteQueryBuilder.buildQueryString(
+						false, Const.TableSchema.TABLE_NAME, null, null, null, null, null, null);
+					cursor = db.query(sql);
 					if (cursor.moveToFirst()) {
 						do {
 							String tableNameDB = cursor.getString(cursor
@@ -239,13 +239,14 @@ public class DBUtility {
      * @return Return true if the table name is an generic table. Otherwise
      *         return false.
      */
-    public static boolean isGenericTable(String tableName, SQLiteDatabase db) {
+    public static boolean isGenericTable(String tableName, SupportSQLiteDatabase db) {
         if (!TextUtils.isEmpty(tableName)) {
             if (tableName.matches("[0-9a-zA-Z]+_[0-9a-zA-Z]+")) {
                 Cursor cursor = null;
                 try {
-                    cursor = db.query(Const.TableSchema.TABLE_NAME, null, null, null, null, null,
-                            null);
+					String sql = SQLiteQueryBuilder.buildQueryString(
+						false, Const.TableSchema.TABLE_NAME, null, null, null, null, null, null);
+                    cursor = db.query(sql);
                     if (cursor.moveToFirst()) {
                         do {
                             String tableNameDB = cursor.getString(cursor
@@ -281,7 +282,7 @@ public class DBUtility {
 	 * @return Return true if there's already a same name table exist, otherwise
 	 *         return false.
 	 */
-	public static boolean isTableExists(String tableName, SQLiteDatabase db) {
+	public static boolean isTableExists(String tableName, SupportSQLiteDatabase db) {
 		boolean exist;
 		try {
 			exist = BaseUtility.containsIgnoreCases(findAllTableNames(db), tableName);
@@ -305,7 +306,7 @@ public class DBUtility {
 	 *         true. Or return false. If any of the passed in parameters is null
 	 *         or empty, return false.
 	 */
-	public static boolean isColumnExists(String columnName, String tableName, SQLiteDatabase db) {
+	public static boolean isColumnExists(String columnName, String tableName, SupportSQLiteDatabase db) {
 		if (TextUtils.isEmpty(columnName) || TextUtils.isEmpty(tableName)) {
 			return false;
 		}
@@ -313,7 +314,7 @@ public class DBUtility {
         Cursor cursor = null;
 		try {
             String checkingColumnSQL = "pragma table_info(" + tableName + ")";
-            cursor = db.rawQuery(checkingColumnSQL, null);
+            cursor = db.query(checkingColumnSQL, null);
             if (cursor.moveToFirst()) {
                 do {
                     String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
@@ -343,11 +344,11 @@ public class DBUtility {
 	 * @return A list with all table names.
 	 * @throws org.litepal.exceptions.DatabaseGenerateException
 	 */
-	public static List<String> findAllTableNames(SQLiteDatabase db) {
+	public static List<String> findAllTableNames(SupportSQLiteDatabase db) {
 		List<String> tableNames = new ArrayList<String>();
 		Cursor cursor = null;
 		try {
-			cursor = db.rawQuery("select * from sqlite_master where type = ?", new String[] { "table" });
+			cursor = db.query("select * from sqlite_master where type = ?", new String[] { "table" });
 			if (cursor.moveToFirst()) {
 				do {
 					String tableName = cursor.getString(cursor.getColumnIndexOrThrow("tbl_name"));
@@ -380,7 +381,7 @@ public class DBUtility {
 	 * @return A table model object with values from database table.
 	 * @throws org.litepal.exceptions.DatabaseGenerateException
 	 */
-	public static TableModel findPragmaTableInfo(String tableName, SQLiteDatabase db) {
+	public static TableModel findPragmaTableInfo(String tableName, SupportSQLiteDatabase db) {
 		if (isTableExists(tableName, db)) {
 			Pair<Set<String>, Set<String>> indexPair = findIndexedColumns(tableName, db);
 			Set<String> indexColumns = indexPair.first;
@@ -390,7 +391,7 @@ public class DBUtility {
 			String checkingColumnSQL = "pragma table_info(" + tableName + ")";
 			Cursor cursor = null;
 			try {
-				cursor = db.rawQuery(checkingColumnSQL, null);
+				cursor = db.query(checkingColumnSQL, null);
 				if (cursor.moveToFirst()) {
 					do {
                         ColumnModel columnModel = new ColumnModel();
@@ -437,18 +438,18 @@ public class DBUtility {
      *          Instance of SQLiteDatabase.
      * @return A pair contains two types of index columns. First is normal index columns. Second is unique index columns.
      */
-    public static Pair<Set<String>, Set<String>> findIndexedColumns(String tableName, SQLiteDatabase db) {
+    public static Pair<Set<String>, Set<String>> findIndexedColumns(String tableName, SupportSQLiteDatabase db) {
 		Set<String> indexColumns = new HashSet<>();
 		Set<String> uniqueColumns = new HashSet<>();
         Cursor cursor = null;
         Cursor innerCursor = null;
         try {
-            cursor = db.rawQuery("pragma index_list(" + tableName +")", null);
+            cursor = db.query("pragma index_list(" + tableName +")", null);
             if (cursor.moveToFirst()) {
                 do {
                     boolean unique = cursor.getInt(cursor.getColumnIndexOrThrow("unique")) == 1;
 					String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-					innerCursor = db.rawQuery("pragma index_info(" + name + ")", null);
+					innerCursor = db.query("pragma index_info(" + name + ")", null);
 					if (innerCursor.moveToFirst()) {
 						String columnName = innerCursor.getString(innerCursor.getColumnIndexOrThrow("name"));
 						if (unique) {

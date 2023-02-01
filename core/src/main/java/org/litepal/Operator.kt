@@ -18,12 +18,21 @@ package org.litepal
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
-import org.litepal.crud.*
-import org.litepal.crud.async.*
+import androidx.sqlite.db.SupportSQLiteDatabase
+import org.litepal.crud.DeleteHandler
+import org.litepal.crud.LitePalSupport
+import org.litepal.crud.QueryHandler
+import org.litepal.crud.SaveHandler
+import org.litepal.crud.UpdateHandler
+import org.litepal.crud.async.AverageExecutor
+import org.litepal.crud.async.CountExecutor
+import org.litepal.crud.async.FindExecutor
+import org.litepal.crud.async.FindMultiExecutor
+import org.litepal.crud.async.SaveExecutor
+import org.litepal.crud.async.UpdateOrDeleteExecutor
 import org.litepal.parser.LitePalAttr
 import org.litepal.parser.LitePalParser
 import org.litepal.tablemanager.Connector
@@ -73,7 +82,7 @@ object Operator {
      *
      * @return A writable SQLiteDatabase instance
      */
-    val database: SQLiteDatabase
+    val database: SupportSQLiteDatabase
         get() = Connector.getDatabase()
 
     /**
@@ -1114,7 +1123,7 @@ object Operator {
                 selectionArgs = arrayOfNulls(sql.size - 1)
                 System.arraycopy(sql, 1, selectionArgs, 0, sql.size - 1)
             }
-            return@withLock Connector.getDatabase().rawQuery(sql[0], selectionArgs)
+            return@withLock Connector.getDatabase().query(sql[0], selectionArgs)
         }
     }
 

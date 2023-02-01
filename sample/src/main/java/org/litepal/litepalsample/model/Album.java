@@ -16,14 +16,15 @@
 
 package org.litepal.litepalsample.model;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 import org.litepal.crud.LitePalSupport;
 
+@Entity(tableName = "album")
 public class Album extends LitePalSupport {
 
+	@PrimaryKey
 	private long id;
 
 //    @Column(ignore = false, unique = false, nullable = false, defaultValue = "888")
@@ -42,11 +43,14 @@ public class Album extends LitePalSupport {
     private String serial;
 
 //    @Column(ignore = false, nullable = false, defaultValue = "100")
-	private Date release;
+	private long release;
 
+	private Long singer_id;
+
+	@Ignore
 	private Singer singer;
 
-	private List<Song> songs = new ArrayList<Song>();
+	//mprivate List<Song> songs = new ArrayList<Song>();
 
 	public long getId() {
 		return id;
@@ -80,12 +84,20 @@ public class Album extends LitePalSupport {
 		this.price = price;
 	}
 
-	public Date getRelease() {
+	public long getRelease() {
 		return release;
 	}
 
-	public void setRelease(Date release) {
+	public void setRelease(long release) {
 		this.release = release;
+	}
+
+	public Long getSinger_id() {
+		return singer_id;
+	}
+
+	public void setSinger_id(Long singer_id) {
+		this.singer_id = singer_id;
 	}
 
 	public Singer getSinger() {
@@ -95,14 +107,14 @@ public class Album extends LitePalSupport {
 	public void setSinger(Singer singer) {
 		this.singer = singer;
 	}
-
-	public List<Song> getSongs() {
-		return songs;
-	}
-
-	public void setSongs(List<Song> songs) {
-		this.songs = songs;
-	}
+	//
+	//public List<Song> getSongs() {
+	//	return songs;
+	//}
+	//
+	//public void setSongs(List<Song> songs) {
+	//	this.songs = songs;
+	//}
 
     public String getSerial() {
         return serial;
@@ -120,4 +132,19 @@ public class Album extends LitePalSupport {
         this.sales = sales;
     }
 
+	public Album(long id, int sales, String name, String publisher, double price, String serial, long release,
+		Long singer_id) {
+		this.id = id;
+		this.sales = sales;
+		this.name = name;
+		this.publisher = publisher;
+		this.price = price;
+		this.serial = serial;
+		this.release = release;
+		this.singer_id = singer_id;
+	}
+
+	@Ignore
+	public Album() {
+	}
 }

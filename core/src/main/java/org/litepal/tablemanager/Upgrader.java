@@ -16,19 +16,17 @@
 
 package org.litepal.tablemanager;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
-
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.litepal.crud.model.AssociationsInfo;
 import org.litepal.tablemanager.model.ColumnModel;
 import org.litepal.tablemanager.model.TableModel;
 import org.litepal.util.Const;
 import org.litepal.util.DBUtility;
 import org.litepal.util.LitePalLog;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Upgrade the database. The first step is to remove the columns that can not
@@ -60,7 +58,7 @@ public class Upgrader extends AssociationUpdater {
 	 * columns of a table.
 	 */
 	@Override
-	protected void createOrUpgradeTable(SQLiteDatabase db, boolean force) {
+	protected void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force) {
 		mDb = db;
 		for (TableModel tableModel : getAllTableModels()) {
 			mTableModel = tableModel;

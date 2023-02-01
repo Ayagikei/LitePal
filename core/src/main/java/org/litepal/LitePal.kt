@@ -18,7 +18,7 @@ package org.litepal
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import org.litepal.crud.LitePalSupport
 import org.litepal.tablemanager.callback.DatabaseListener
 import kotlin.coroutines.CoroutineContext
@@ -58,7 +58,7 @@ object LitePal {
      * @return A writable SQLiteDatabase instance
      */
     @JvmStatic
-    fun getDatabase(): SQLiteDatabase = Operator.database
+    fun getDatabase(): SupportSQLiteDatabase = Operator.database
 
     /**
      * Begins a transaction in EXCLUSIVE mode.

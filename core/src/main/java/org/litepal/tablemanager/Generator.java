@@ -16,20 +16,18 @@
 
 package org.litepal.tablemanager;
 
+import android.database.SQLException;
+import android.text.TextUtils;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import org.litepal.LitePalBase;
 import org.litepal.exceptions.DatabaseGenerateException;
 import org.litepal.parser.LitePalAttr;
 import org.litepal.tablemanager.model.AssociationsModel;
 import org.litepal.tablemanager.model.TableModel;
 import org.litepal.util.BaseUtility;
-
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.text.TextUtils;
 
 /**
  * This class is the basic class for managing database dynamically. It is used
@@ -100,7 +98,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            instance of SQLiteDatabase
 	 */
-	protected void execute(List<String> sqls, SQLiteDatabase db) {
+	protected void execute(List<String> sqls, SupportSQLiteDatabase db) {
 		String throwSQL = "";
 		try {
 			if (sqls != null && !sqls.isEmpty()) {
@@ -125,7 +123,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param force
 	 *            Drop the table first if it already exists.
 	 */
-	private static void addAssociation(SQLiteDatabase db, boolean force) {
+	private static void addAssociation(SupportSQLiteDatabase db, boolean force) {
 		AssociationCreator associationsCreator = new Creator();
 		associationsCreator.addOrUpdateAssociation(db, force);
 	}
@@ -137,7 +135,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	private static void updateAssociations(SQLiteDatabase db) {
+	private static void updateAssociations(SupportSQLiteDatabase db) {
 		AssociationUpdater associationUpgrader = new Upgrader();
 		associationUpgrader.addOrUpdateAssociation(db, false);
 	}
@@ -149,7 +147,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	private static void upgradeTables(SQLiteDatabase db) {
+	private static void upgradeTables(SupportSQLiteDatabase db) {
 		Upgrader upgrader = new Upgrader();
 		upgrader.createOrUpgradeTable(db, false);
 	}
@@ -164,7 +162,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param force
 	 *            Drop the table first if it already exists.
 	 */
-	private static void create(SQLiteDatabase db, boolean force) {
+	private static void create(SupportSQLiteDatabase db, boolean force) {
 		Creator creator = new Creator();
 		creator.createOrUpgradeTable(db, force);
 	}
@@ -176,7 +174,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	private static void drop(SQLiteDatabase db) {
+	private static void drop(SupportSQLiteDatabase db) {
 		Dropper dropper = new Dropper();
 		dropper.createOrUpgradeTable(db, false);
 	}
@@ -203,7 +201,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	static void create(SQLiteDatabase db) {
+	static void create(SupportSQLiteDatabase db) {
 		create(db, true);
 		addAssociation(db, true);
 	}
@@ -216,7 +214,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param db
 	 *            Instance of SQLiteDatabase.
 	 */
-	static void upgrade(SQLiteDatabase db) {
+	public static void upgrade(SupportSQLiteDatabase db) {
 		drop(db);
 		create(db, false);
 		updateAssociations(db);
@@ -234,7 +232,7 @@ public abstract class Generator extends LitePalBase {
 	 * @param force
 	 *            Drop the table first if it already exists.
 	 */
-	protected abstract void createOrUpgradeTable(SQLiteDatabase db, boolean force);
+	protected abstract void createOrUpgradeTable(SupportSQLiteDatabase db, boolean force);
 
 	/**
 	 * Analysis the {@link org.litepal.tablemanager.model.AssociationsModel} by the purpose of subclasses, and
@@ -246,6 +244,6 @@ public abstract class Generator extends LitePalBase {
 	 * @param force
 	 *            Drop the table first if it already exists.
 	 */
-	protected abstract void addOrUpdateAssociation(SQLiteDatabase db, boolean force);
+	protected abstract void addOrUpdateAssociation(SupportSQLiteDatabase db, boolean force);
 
 }
