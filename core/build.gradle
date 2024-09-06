@@ -49,7 +49,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.panpf.bintray-publish:bintray-publish:1.0.0'
+       // classpath 'com.github.panpf.bintray-publish:bintray-publish:1.0.0'
     }
 }
 

@@ -16,6 +16,8 @@
 
 package org.litepal.tablemanager.callback;
 
+import android.database.sqlite.SQLiteDatabase;
+
 /**
  * Callback for listening database create and upgrade events.
  * @author Tony Green
@@ -23,8 +25,12 @@ package org.litepal.tablemanager.callback;
  */
 public interface DatabaseListener {
 
+    void onConfigure(SQLiteDatabase db);
+
     void onCreate();
 
     void onUpgrade(int oldVersion, int newVersion);
+
+    void onOpen(SQLiteDatabase db);
 
 }

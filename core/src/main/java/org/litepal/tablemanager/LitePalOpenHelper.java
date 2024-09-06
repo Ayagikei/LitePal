@@ -30,7 +30,7 @@ import org.litepal.util.SharedUtil;
 /**
  * The database helper to generate and manage the tables. It will automate
  * create or upgrade the database file depends on the parameters passed in.
- *
+ * <p>
  * LitePal makes it easy for managing tables. It used the dynamic features of
  * Java with reflection API to achieve that. Developers won't need to write
  * their own SQL for managing tables, LitePal will do that for them. Developers
@@ -46,19 +46,15 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
     /**
      * The standard constructor for SQLiteOpenHelper.
      *
-     * @param context
-     *            To use to open or create the database.
-     * @param name
-     *            The database file.
-     * @param factory
-     *            To use for creating cursor objects, or null for the default
-     *            version number of the database (starting at 1); if the
-     *            database is older, onUpgrade.
-     * @param version
-     *            (SQLiteDatabase, int, int) will be used to upgrade the
-     *            database; if the database is newer,
-     *            onDowngrade(SQLiteDatabase, int, int) will be used to
-     *            downgrade the database
+     * @param context To use to open or create the database.
+     * @param name    The database file.
+     * @param factory To use for creating cursor objects, or null for the default
+     *                version number of the database (starting at 1); if the
+     *                database is older, onUpgrade.
+     * @param version (SQLiteDatabase, int, int) will be used to upgrade the
+     *                database; if the database is newer,
+     *                onDowngrade(SQLiteDatabase, int, int) will be used to
+     *                downgrade the database
      */
     LitePalOpenHelper(Context context, String name, CursorFactory factory, int version) {
         super(context, name, factory, version);
@@ -68,16 +64,32 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
      * A simple constructor for SQLiteOpenHelper with null for CursorFactory as
      * default.
      *
-     * @param dbName
-     *            The database file.
-     * @param version
-     *            (SQLiteDatabase, int, int) will be used to upgrade the
-     *            database; if the database is newer,
-     *            onDowngrade(SQLiteDatabase, int, int) will be used to
-     *            downgrade the database
+     * @param dbName  The database file.
+     * @param version (SQLiteDatabase, int, int) will be used to upgrade the
+     *                database; if the database is newer,
+     *                onDowngrade(SQLiteDatabase, int, int) will be used to
+     *                downgrade the database
      */
     LitePalOpenHelper(String dbName, int version) {
         this(LitePalApplication.getContext(), dbName, null, version);
+    }
+
+    @Override
+    public void onConfigure(SQLiteDatabase db) {
+        super.onConfigure(db);
+        final DatabaseListener listener = Operator.dBListener;
+        if (listener != null) {
+            listener.onConfigure(db);
+        }
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        final DatabaseListener listener = Operator.dBListener;
+        if (listener != null) {
+            listener.onOpen(db);
+        }
     }
 
     @Override
@@ -85,12 +97,7 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
         Generator.create(db);
         final DatabaseListener listener = Operator.dBListener;
         if (listener != null) {
-            LitePalApplication.sHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    listener.onCreate();
-                }
-            });
+            LitePalApplication.sHandler.post(listener::onCreate);
         }
     }
 
@@ -100,12 +107,7 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
         SharedUtil.updateVersion(LitePalAttr.getInstance().getExtraKeyName(), newVersion);
         final DatabaseListener listener = Operator.dBListener;
         if (listener != null) {
-            LitePalApplication.sHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    listener.onUpgrade(oldVersion, newVersion);
-                }
-            });
+            LitePalApplication.sHandler.post(() -> listener.onUpgrade(oldVersion, newVersion));
         }
     }
 
