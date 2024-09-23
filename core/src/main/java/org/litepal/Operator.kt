@@ -105,7 +105,7 @@ object Operator {
      * The database to switch to.
      */
     fun use(litePalDB: LitePalDB) {
-        reentrantLock.withLock {
+        withLockAndDbContext {
             val litePalAttr = LitePalAttr.getInstance()
             litePalAttr.dbName = litePalDB.dbName
             litePalAttr.version = litePalDB.version
@@ -124,7 +124,7 @@ object Operator {
      * Switch the using database to default with configuration by litepal.xml.
      */
     fun useDefault() {
-        reentrantLock.withLock {
+        withLockAndDbContext {
             LitePalAttr.clearInstance()
             Connector.clearLitePalOpenHelperInstance()
         }
@@ -139,7 +139,7 @@ object Operator {
      */
     fun deleteDatabase(dbName: String): Boolean {
         var dbName = dbName
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             if (!TextUtils.isEmpty(dbName)) {
                 if (!dbName.endsWith(Const.Config.DB_NAME_SUFFIX)) {
                     dbName = dbName + Const.Config.DB_NAME_SUFFIX
@@ -151,7 +151,7 @@ object Operator {
                         removeVersionInSharedPreferences(dbName)
                         Connector.clearLitePalOpenHelperInstance()
                     }
-                    return result
+                    return@withLockAndDbContext result
                 }
                 val path = LitePalApplication.getContext().getExternalFilesDir("")
                     .toString() + "/databases/"
@@ -161,9 +161,9 @@ object Operator {
                     removeVersionInSharedPreferences(dbName)
                     Connector.clearLitePalOpenHelperInstance()
                 }
-                return result
+                return@withLockAndDbContext result
             }
-            return false
+            return@withLockAndDbContext false
         }
     }
 
@@ -363,9 +363,9 @@ object Operator {
      * @return Count of the specified table.
      */
     fun count(tableName: String?): Int {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val cQuery = FluentQuery()
-            return cQuery.count(tableName)
+             cQuery.count(tableName)
         }
     }
 
@@ -377,7 +377,7 @@ object Operator {
     fun countAsync(tableName: String?): CountExecutor {
         val executor = CountExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val count = count(tableName)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(count) }
@@ -446,9 +446,9 @@ object Operator {
      * @return The average value on a given column.
      */
     fun average(tableName: String?, column: String?): Double {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val cQuery = FluentQuery()
-            return cQuery.average(tableName, column)
+             cQuery.average(tableName, column)
         }
     }
 
@@ -460,7 +460,7 @@ object Operator {
     fun averageAsync(tableName: String?, column: String?): AverageExecutor {
         val executor = AverageExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val average = average(tableName, column)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(average) }
@@ -542,9 +542,9 @@ object Operator {
      * @return The maximum value on a given column.
      */
     fun <T> max(tableName: String?, columnName: String?, columnType: Class<T>?): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val cQuery = FluentQuery()
-            return cQuery.max(tableName, columnName, columnType)
+             cQuery.max(tableName, columnName, columnType)
         }
 
     }
@@ -561,7 +561,7 @@ object Operator {
     ): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = max(tableName, columnName, columnType)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -643,9 +643,9 @@ object Operator {
      * @return The minimum value on a given column.
      */
     fun <T> min(tableName: String?, columnName: String?, columnType: Class<T>?): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val cQuery = FluentQuery()
-            return cQuery.min(tableName, columnName, columnType)
+             cQuery.min(tableName, columnName, columnType)
         }
 
     }
@@ -662,7 +662,7 @@ object Operator {
     ): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = min(tableName, columnName, columnType)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -743,9 +743,9 @@ object Operator {
      * @return The sum value on a given column.
      */
     fun <T> sum(tableName: String?, columnName: String?, columnType: Class<T>?): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val cQuery = FluentQuery()
-            return cQuery.sum(tableName, columnName, columnType)
+             cQuery.sum(tableName, columnName, columnType)
         }
 
     }
@@ -762,7 +762,7 @@ object Operator {
     ): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = sum(tableName, columnName, columnType)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -824,9 +824,9 @@ object Operator {
      * @return An object with found data from database, or null.
      */
     fun <T> find(modelClass: Class<T>?, id: Long, isEager: Boolean): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val queryHandler = QueryHandler(Connector.getDatabase())
-            return queryHandler.onFind(modelClass, id, isEager)
+             queryHandler.onFind(modelClass, id, isEager)
         }
     }
 
@@ -838,7 +838,7 @@ object Operator {
     fun <T> findAsync(modelClass: Class<T>?, id: Long, isEager: Boolean): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = find(modelClass, id, isEager)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -892,9 +892,9 @@ object Operator {
      * @return An object with data of first row, or null.
      */
     fun <T> findFirst(modelClass: Class<T>?, isEager: Boolean): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val queryHandler = QueryHandler(Connector.getDatabase())
-            return queryHandler.onFindFirst(modelClass, isEager)
+             queryHandler.onFindFirst(modelClass, isEager)
 
         }
     }
@@ -907,7 +907,7 @@ object Operator {
     fun <T> findFirstAsync(modelClass: Class<T>?, isEager: Boolean): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = findFirst(modelClass, isEager)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -961,10 +961,9 @@ object Operator {
      * @return An object with data of last row, or null.
      */
     fun <T> findLast(modelClass: Class<T>?, isEager: Boolean): T {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val queryHandler = QueryHandler(Connector.getDatabase())
-            return queryHandler.onFindLast(modelClass, isEager)
-
+             queryHandler.onFindLast(modelClass, isEager)
         }
     }
 
@@ -976,7 +975,7 @@ object Operator {
     fun <T> findLastAsync(modelClass: Class<T>?, isEager: Boolean): FindExecutor<T> {
         val executor = FindExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = findLast(modelClass, isEager)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -1050,10 +1049,9 @@ object Operator {
         modelClass: Class<T>?, isEager: Boolean,
         vararg ids: Long
     ): List<T> {
-        reentrantLock.withLock {
+        return withLockAndDbContext {
             val queryHandler = QueryHandler(Connector.getDatabase())
-            return queryHandler.onFindAll(modelClass, isEager, *ids)
-
+             queryHandler.onFindAll(modelClass, isEager, *ids)
         }
     }
 
@@ -1069,7 +1067,7 @@ object Operator {
     ): FindMultiExecutor<T> {
         val executor = FindMultiExecutor<T>()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val t = findAll(modelClass, isEager, *ids)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(t) }
@@ -1099,13 +1097,13 @@ object Operator {
      */
     @JvmStatic
     fun findBySQL(vararg sql: String?): Cursor? {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             BaseUtility.checkConditionsCorrect(*sql)
             if (sql == null) {
-                return@withLock null
+                return@withLockAndDbContext null
             }
             if (sql.isEmpty()) {
-                return@withLock null
+                return@withLockAndDbContext null
             }
             val selectionArgs: Array<String?>?
             if (sql.size == 1) {
@@ -1114,7 +1112,7 @@ object Operator {
                 selectionArgs = arrayOfNulls(sql.size - 1)
                 System.arraycopy(sql, 1, selectionArgs, 0, sql.size - 1)
             }
-            return@withLock Connector.getDatabase().rawQuery(sql[0], selectionArgs)
+            return@withLockAndDbContext Connector.getDatabase().rawQuery(sql[0], selectionArgs)
         }
     }
 
@@ -1136,11 +1134,11 @@ object Operator {
      * @return The number of rows affected. Including cascade delete rows.
      */
     fun delete(modelClass: Class<*>?, id: Long): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val rowsAffected: Int
             val db = Connector.getDatabase()
             db.beginTransaction()
-            return@withLock try {
+            return@withLockAndDbContext try {
                 val deleteHandler = DeleteHandler(db)
                 rowsAffected = deleteHandler.onDelete(modelClass, id)
                 db.setTransactionSuccessful()
@@ -1159,7 +1157,7 @@ object Operator {
     fun deleteAsync(modelClass: Class<*>?, id: Long): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = delete(modelClass, id)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -1195,7 +1193,7 @@ object Operator {
      * @return The number of rows affected.
      */
     fun deleteAll(modelClass: Class<*>?, vararg conditions: String?): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val rowsAffected: Int
             val db = Connector.getDatabase()
             db.beginTransaction()
@@ -1219,7 +1217,7 @@ object Operator {
     fun deleteAllAsync(modelClass: Class<*>?, vararg conditions: String?): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = deleteAll(modelClass, *conditions)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -1259,7 +1257,7 @@ object Operator {
      * @return The number of rows affected.
      */
     fun deleteAll(tableName: String?, vararg conditions: String?): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val deleteHandler = DeleteHandler(Connector.getDatabase())
             deleteHandler.onDeleteAll(tableName, *conditions)
 
@@ -1274,7 +1272,7 @@ object Operator {
     fun deleteAllAsync(tableName: String?, vararg conditions: String?): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = deleteAll(tableName, *conditions)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -1308,7 +1306,7 @@ object Operator {
      * @return The number of rows affected.
      */
     fun update(modelClass: Class<*>?, values: ContentValues?, id: Long): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val updateHandler = UpdateHandler(Connector.getDatabase())
             updateHandler.onUpdate(modelClass, id, values)
 
@@ -1327,7 +1325,7 @@ object Operator {
     ): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = update(modelClass, values, id)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -1433,7 +1431,7 @@ object Operator {
         tableName: String?, values: ContentValues?,
         vararg conditions: String?
     ): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val updateHandler = UpdateHandler(Connector.getDatabase())
             updateHandler.onUpdateAll(tableName, values, *conditions)
 
@@ -1452,7 +1450,7 @@ object Operator {
     ): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = updateAll(tableName, values, *conditions)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -1492,7 +1490,7 @@ object Operator {
      */
     @JvmStatic
     fun <T : LitePalSupport?> saveAll(collection: Collection<T>?): Boolean {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val db = Connector.getDatabase()
             db.beginTransaction()
             try {
@@ -1518,7 +1516,7 @@ object Operator {
     fun <T : LitePalSupport?> saveAllAsync(collection: Collection<T>?): SaveExecutor {
         val executor = SaveExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val success: Boolean = try {
                     saveAll(collection)
                     true

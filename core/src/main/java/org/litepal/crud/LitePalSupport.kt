@@ -24,6 +24,7 @@ import org.litepal.reentrantLock
 import org.litepal.tablemanager.Connector
 import org.litepal.util.BaseUtility
 import org.litepal.util.DBUtility
+import org.litepal.withLockAndDbContext
 import kotlin.concurrent.withLock
 
 /**
@@ -181,7 +182,7 @@ protected constructor() {
      * @return The number of rows affected. Including cascade delete rows.
      */
     fun delete(): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val db = Connector.getDatabase()
             db.beginTransaction()
             try {
@@ -205,7 +206,7 @@ protected constructor() {
     fun deleteAsync(): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = delete()
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -239,10 +240,10 @@ protected constructor() {
      * @return The number of rows affected.
      */
     fun update(id: Long): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val db = Connector.getDatabase()
             db.beginTransaction()
-            return@withLock try {
+            return@withLockAndDbContext try {
                 val updateHandler = UpdateHandler(Connector.getDatabase())
                 val rowsAffected = updateHandler.onUpdate(this@LitePalSupport, id)
                 fieldsToSetToDefault!!.clear()
@@ -265,7 +266,7 @@ protected constructor() {
     fun updateAsync(id: Long): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = update(id)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -307,10 +308,10 @@ protected constructor() {
      * @return The number of rows affected.
      */
     fun updateAll(vararg conditions: String?): Int {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val db = Connector.getDatabase()
             db.beginTransaction()
-            return@withLock try {
+            return@withLockAndDbContext try {
                 val updateHandler = UpdateHandler(Connector.getDatabase())
                 val rowsAffected = updateHandler.onUpdateAll(this@LitePalSupport, *conditions)
                 fieldsToSetToDefault!!.clear()
@@ -333,7 +334,7 @@ protected constructor() {
     fun updateAllAsync(vararg conditions: String?): UpdateOrDeleteExecutor {
         val executor = UpdateOrDeleteExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val rowsAffected = updateAll(*conditions)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(rowsAffected) }
@@ -387,7 +388,7 @@ protected constructor() {
     fun saveAsync(): SaveExecutor {
         val executor = SaveExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val success = save()
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(success) }
@@ -424,7 +425,7 @@ protected constructor() {
      * @throws LitePalSupportException
      */
     fun saveThrows() {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             val db = Connector.getDatabase()
             db.beginTransaction()
             try {
@@ -473,12 +474,12 @@ protected constructor() {
      * @return If the model saved or updated successfully, return true. Otherwise return false.
      */
     fun saveOrUpdate(vararg conditions: String): Boolean {
-        return reentrantLock.withLock {
+        return withLockAndDbContext {
             if (conditions == null || conditions.size == 0) {
-                return save()
+                return@withLockAndDbContext save()
             }
             val list = where(*conditions).find(javaClass) as List<LitePalSupport>
-            return@withLock if (list.isEmpty()) {
+            return@withLockAndDbContext if (list.isEmpty()) {
                 save()
             } else {
                 val db = Connector.getDatabase()
@@ -511,7 +512,7 @@ protected constructor() {
     fun saveOrUpdateAsync(vararg conditions: String): SaveExecutor {
         val executor = SaveExecutor()
         val runnable = Runnable {
-            reentrantLock.withLock {
+            withLockAndDbContext {
                 val success = saveOrUpdate(*conditions)
                 if (executor.listener != null) {
                     handler.post { executor.listener.onFinish(success) }
