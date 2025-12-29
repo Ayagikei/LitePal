@@ -453,6 +453,11 @@ If you find any bug when using LitePal, please report **[here](https://github.co
 
 ## Change logs
 
+### 3.3.1
+ * Add **IndexListener** and **LitePal.registerIndexListener()** for creating indexes (e.g. composite indexes) after database create/upgrade.
+ * Avoid unnecessary table rebuilds by ignoring composite indexes during schema diff.
+ * Fail-fast on cross-thread transaction access to prevent deadlocks.
+
 ### 3.2.3
  * Support database index by adding @Column(index = true) on field.
  * Adding return value for **runInTransaction()** function for Kotlin.

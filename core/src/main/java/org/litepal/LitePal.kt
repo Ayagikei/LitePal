@@ -21,6 +21,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import org.litepal.crud.LitePalSupport
 import org.litepal.tablemanager.callback.DatabaseListener
+import org.litepal.tablemanager.callback.IndexListener
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -1140,6 +1141,14 @@ object LitePal {
     @JvmStatic
     fun registerDatabaseListener(listener: DatabaseListener) {
         Operator.registerDatabaseListener(listener)
+    }
+
+    /**
+     * Register a listener to create indexes after database create or upgrade.
+     */
+    @JvmStatic
+    fun registerIndexListener(listener: IndexListener) {
+        Operator.registerIndexListener(listener)
     }
 
 }

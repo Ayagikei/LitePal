@@ -19,6 +19,7 @@ package org.litepal.extension
 import android.content.ContentValues
 import org.litepal.LitePal
 import org.litepal.crud.LitePalSupport
+import org.litepal.withLockAndDbContext
 
 /**
  * Extension of LitePal class for Kotlin api.
@@ -625,16 +626,18 @@ fun <T : LitePalSupport> Collection<T>.saveAll() = LitePal.saveAll(this)
  * If lambda return true, all db operations in lambda will be committed.
  * Otherwise all db operations will be rolled back.
  */
-@Synchronized fun LitePal.runInTransaction(block: () -> Boolean): Boolean {
+fun LitePal.runInTransaction(block: () -> Boolean): Boolean = withLockAndDbContext {
     beginTransaction()
-    val succeeded = try {
-        block()
+    var succeeded = false
+    try {
+        succeeded = block()
+        if (succeeded) {
+            setTransactionSuccessful()
+        }
     } catch (e: Exception) {
-        false
+        succeeded = false
+    } finally {
+        endTransaction()
     }
-    if (succeeded) {
-        setTransactionSuccessful()
-    }
-    endTransaction()
-    return succeeded
+    succeeded
 }

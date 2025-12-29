@@ -441,22 +441,35 @@ public class DBUtility {
 		Set<String> indexColumns = new HashSet<>();
 		Set<String> uniqueColumns = new HashSet<>();
         Cursor cursor = null;
-        Cursor innerCursor = null;
         try {
             cursor = db.rawQuery("pragma index_list(" + tableName +")", null);
             if (cursor.moveToFirst()) {
                 do {
                     boolean unique = cursor.getInt(cursor.getColumnIndexOrThrow("unique")) == 1;
 					String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-					innerCursor = db.rawQuery("pragma index_info(" + name + ")", null);
-					if (innerCursor.moveToFirst()) {
-						String columnName = innerCursor.getString(innerCursor.getColumnIndexOrThrow("name"));
-						if (unique) {
-							uniqueColumns.add(columnName);
-						} else {
-							indexColumns.add(columnName);
-						}
-					}
+                    Cursor innerCursor = null;
+                    try {
+                        innerCursor = db.rawQuery("pragma index_info(" + name + ")", null);
+                        if (innerCursor.moveToFirst()) {
+                            String columnName = innerCursor.getString(innerCursor.getColumnIndexOrThrow("name"));
+                            // Only treat single-column indexes as column constraints for schema diff.
+                            // Multi-column (composite) indexes must be ignored here; otherwise LitePal
+                            // would mis-classify them as the first column's index/unique constraint and
+                            // trigger unnecessary table rebuilds during upgrade.
+                            if (innerCursor.moveToNext()) {
+                                continue;
+                            }
+                            if (unique) {
+                                uniqueColumns.add(columnName);
+                            } else {
+                                indexColumns.add(columnName);
+                            }
+                        }
+                    } finally {
+                        if (innerCursor != null) {
+                            innerCursor.close();
+                        }
+                    }
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
@@ -465,9 +478,6 @@ public class DBUtility {
         } finally {
             if (cursor != null) {
                 cursor.close();
-            }
-            if (innerCursor != null) {
-                innerCursor.close();
             }
         }
         return new Pair<>(indexColumns, uniqueColumns);

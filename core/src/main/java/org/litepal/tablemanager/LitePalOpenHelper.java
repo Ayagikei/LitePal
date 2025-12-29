@@ -25,6 +25,7 @@ import org.litepal.LitePalApplication;
 import org.litepal.Operator;
 import org.litepal.parser.LitePalAttr;
 import org.litepal.tablemanager.callback.DatabaseListener;
+import org.litepal.tablemanager.callback.IndexListener;
 import org.litepal.util.SharedUtil;
 
 /**
@@ -95,6 +96,10 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         Generator.create(db);
+        final IndexListener indexListener = Operator.indexListener;
+        if (indexListener != null) {
+            indexListener.onCreate(db);
+        }
         final DatabaseListener listener = Operator.dBListener;
         if (listener != null) {
             LitePalApplication.sHandler.post(listener::onCreate);
@@ -104,6 +109,10 @@ class LitePalOpenHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, final int oldVersion, final int newVersion) {
         Generator.upgrade(db);
+        final IndexListener indexListener = Operator.indexListener;
+        if (indexListener != null) {
+            indexListener.onUpgrade(db, oldVersion, newVersion);
+        }
         SharedUtil.updateVersion(LitePalAttr.getInstance().getExtraKeyName(), newVersion);
         final DatabaseListener listener = Operator.dBListener;
         if (listener != null) {

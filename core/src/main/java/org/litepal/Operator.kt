@@ -28,6 +28,7 @@ import org.litepal.parser.LitePalAttr
 import org.litepal.parser.LitePalParser
 import org.litepal.tablemanager.Connector
 import org.litepal.tablemanager.callback.DatabaseListener
+import org.litepal.tablemanager.callback.IndexListener
 import org.litepal.util.BaseUtility
 import org.litepal.util.Const
 import org.litepal.util.DBUtility
@@ -56,6 +57,9 @@ object Operator {
     @JvmField
     var dBListener: DatabaseListener? = null
 
+    @JvmField
+    var indexListener: IndexListener? = null
+
     /**
      * Initialize to make LitePal ready to work. If you didn't configure LitePalApplication
      * in the AndroidManifest.xml, make sure you call this method as soon as possible. In
@@ -74,20 +78,34 @@ object Operator {
      * @return A writable SQLiteDatabase instance
      */
     val database: SQLiteDatabase
-        get() = Connector.getDatabase()
+        get() {
+            assertNoCrossThreadExternalTransaction()
+            return Connector.getDatabase()
+        }
 
     /**
      * Begins a transaction in EXCLUSIVE mode.
      */
     fun beginTransaction() {
-        database.beginTransaction()
+        beginExternalTransactionLockOrThrow()
+        try {
+            database.beginTransaction()
+        } catch (t: Throwable) {
+            rollbackExternalTransactionBegin()
+            throw t
+        }
     }
 
     /**
      * End a transaction.
      */
     fun endTransaction() {
-        database.endTransaction()
+        assertExternalTransactionOwnerThreadOrThrow("endTransaction()")
+        try {
+            database.endTransaction()
+        } finally {
+            endExternalTransactionLockOrThrow()
+        }
     }
 
     /**
@@ -96,6 +114,7 @@ object Operator {
      * If any errors are encountered between this and endTransaction the transaction will still be committed.
      */
     fun setTransactionSuccessful() {
+        assertExternalTransactionOwnerThreadOrThrow("setTransactionSuccessful()")
         database.setTransactionSuccessful()
     }
 
@@ -1565,5 +1584,12 @@ object Operator {
      */
     fun registerDatabaseListener(listener: DatabaseListener?) {
         dBListener = listener
+    }
+
+    /**
+     * Register a listener to create indexes after database create or upgrade.
+     */
+    fun registerIndexListener(listener: IndexListener?) {
+        indexListener = listener
     }
 }
