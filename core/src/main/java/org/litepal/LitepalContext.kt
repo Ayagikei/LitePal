@@ -41,21 +41,23 @@ private var externalTransactionOwnerThreadId: Long = NO_EXTERNAL_TRANSACTION_THR
 @Volatile
 private var externalTransactionId: Int = 0
 
+private val suspendingTransactionThreadId = ThreadLocal<Long>()
+
 @PublishedApi
-internal fun assertNoCrossThreadExternalTransaction() {
-    val ownerThreadId = externalTransactionOwnerThreadId
-    if (ownerThreadId == NO_EXTERNAL_TRANSACTION_THREAD_ID) return
+internal fun assertNotSuspendingTransactionOnDifferentThread() {
+    val transactionThreadId = suspendingTransactionThreadId.get() ?: return
     val currentThreadId = Thread.currentThread().id
-    if (ownerThreadId != currentThreadId) {
+    if (transactionThreadId != currentThreadId) {
         throw IllegalStateException(
             "Cannot access LitePal database on thread '${Thread.currentThread().name}'. " +
-                "A transaction (id=$externalTransactionId) is active on a different thread (id=$ownerThreadId). " +
-                "This usually happens when using coroutines and the coroutine resumes on a different thread " +
-                "after calling beginTransaction(). Use LitePal.runInTransaction{} (non-suspending) or keep " +
-                "all transaction calls on the same thread."
+                "This coroutine is running in a suspending transaction that is bound to a different thread (id=$transactionThreadId). " +
+                "To avoid SQLite transaction deadlocks, all database operations inside LitePal.withTransaction{} must run on the same thread."
         )
     }
 }
+
+@PublishedApi
+internal fun suspendingTransactionThreadLocal(): ThreadLocal<Long> = suspendingTransactionThreadId
 
 internal fun beginExternalTransactionLockOrThrow() {
     val currentThreadId = Thread.currentThread().id
@@ -138,7 +140,7 @@ internal fun assertExternalTransactionOwnerThreadOrThrow(operation: String) {
 
 
 inline fun <T> withLockAndDbContext(crossinline block: () -> T): T {
-    assertNoCrossThreadExternalTransaction()
+    assertNotSuspendingTransactionOnDifferentThread()
     if(useLock){
         reentrantLock.lock()
     }

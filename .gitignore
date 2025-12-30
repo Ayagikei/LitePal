@@ -1,4 +1,5 @@
 .gradle
+.tooling/
 gradle.properties
 /local.properties
 /.idea/workspace.xml

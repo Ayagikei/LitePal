@@ -24,7 +24,7 @@ Edit your **build.gradle** file and add below dependency.
 
 ``` groovy
 dependencies {
-    implementation 'org.litepal.guolindev:core:3.2.3'
+    implementation 'fun.lifeupapp:core:3.3.2-SNAPSHOT'
 }
 ```
 
@@ -452,6 +452,10 @@ If you are using ProGuard you might need to add the following option:
 If you find any bug when using LitePal, please report **[here](https://github.com/LitePalFramework/LitePal/issues/new)**. Thanks for helping us making better.
 
 ## Change logs
+
+### 3.3.2-SNAPSHOT
+ * Add **LitePal.withTransaction{}** for safe suspending transactions (fail-fast on cross-thread database access to avoid deadlocks).
+ * Limit cross-thread transaction assertions to suspending transactions only, to avoid impacting non-transaction coroutine usage.
 
 ### 3.3.1
  * Add **IndexListener** and **LitePal.registerIndexListener()** for creating indexes (e.g. composite indexes) after database create/upgrade.

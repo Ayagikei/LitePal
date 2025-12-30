@@ -79,7 +79,7 @@ object Operator {
      */
     val database: SQLiteDatabase
         get() {
-            assertNoCrossThreadExternalTransaction()
+            assertNotSuspendingTransactionOnDifferentThread()
             return Connector.getDatabase()
         }
 
