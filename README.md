@@ -24,7 +24,7 @@ Edit your **build.gradle** file and add below dependency.
 
 ``` groovy
 dependencies {
-    implementation 'fun.lifeupapp:core:3.3.2-SNAPSHOT'
+    implementation 'fun.lifeupapp:core:3.5.0'
 }
 ```
 
@@ -453,7 +453,7 @@ If you find any bug when using LitePal, please report **[here](https://github.co
 
 ## Change logs
 
-### 3.3.2-SNAPSHOT
+### 3.5.0
  * Add **LitePal.withTransaction{}** for safe suspending transactions (fail-fast on cross-thread database access to avoid deadlocks).
  * Limit cross-thread transaction assertions to suspending transactions only, to avoid impacting non-transaction coroutine usage.
 
