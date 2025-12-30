@@ -24,7 +24,7 @@ Edit your **build.gradle** file and add below dependency.
 
 ``` groovy
 dependencies {
-    implementation 'fun.lifeupapp:core:3.5.0'
+    implementation 'fun.lifeupapp:litepal:3.5.0'
 }
 ```
 
