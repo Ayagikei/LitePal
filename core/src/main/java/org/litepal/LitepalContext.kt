@@ -24,6 +24,13 @@ object LitePalContext {
 
     var debugMode: Boolean = true
 
+    /**
+     * Controls behavior when a cross-thread violation is detected.
+     * - true (default): Throws [IllegalStateException] immediately.
+     * - false: Only logs a warning message without throwing.
+     */
+    var failFastOnCrossThreadViolation: Boolean = true
+
     var logger = { message: String -> println(message) }
 
     var durationThreshold = 200
@@ -48,11 +55,10 @@ internal fun assertNotSuspendingTransactionOnDifferentThread() {
     val transactionThreadId = suspendingTransactionThreadId.get() ?: return
     val currentThreadId = Thread.currentThread().id
     if (transactionThreadId != currentThreadId) {
-        throw IllegalStateException(
-            "Cannot access LitePal database on thread '${Thread.currentThread().name}'. " +
-                "This coroutine is running in a suspending transaction that is bound to a different thread (id=$transactionThreadId). " +
-                "To avoid SQLite transaction deadlocks, all database operations inside LitePal.withTransaction{} must run on the same thread."
-        )
+        val message = "Cannot access LitePal database on thread '${Thread.currentThread().name}'. " +
+            "This coroutine is running in a suspending transaction that is bound to a different thread (id=$transactionThreadId). " +
+            "To avoid SQLite transaction deadlocks, all database operations inside LitePal.withTransaction{} must run on the same thread."
+        handleCrossThreadViolation(message)
     }
 }
 
@@ -63,10 +69,9 @@ internal fun beginExternalTransactionLockOrThrow() {
     val currentThreadId = Thread.currentThread().id
     val ownerThreadId = externalTransactionOwnerThreadId
     if (ownerThreadId != NO_EXTERNAL_TRANSACTION_THREAD_ID && ownerThreadId != currentThreadId) {
-        throw IllegalStateException(
-            "Cannot beginTransaction() on thread '${Thread.currentThread().name}'. " +
-                "A transaction (id=$externalTransactionId) is already active on a different thread (id=$ownerThreadId)."
-        )
+        val message = "Cannot beginTransaction() on thread '${Thread.currentThread().name}'. " +
+            "A transaction (id=$externalTransactionId) is already active on a different thread (id=$ownerThreadId)."
+        handleCrossThreadViolation(message)
     }
     if (useLock) {
         reentrantLock.lock()
@@ -102,10 +107,9 @@ internal fun endExternalTransactionLockOrThrow() {
         throw IllegalStateException("Cannot endTransaction() because no transaction is active.")
     }
     if (ownerThreadId != currentThreadId) {
-        throw IllegalStateException(
-            "Cannot endTransaction() on thread '${Thread.currentThread().name}'. " +
-                "The transaction (id=$externalTransactionId) is owned by a different thread (id=$ownerThreadId)."
-        )
+        val message = "Cannot endTransaction() on thread '${Thread.currentThread().name}'. " +
+            "The transaction (id=$externalTransactionId) is owned by a different thread (id=$ownerThreadId)."
+        handleCrossThreadViolation(message)
     }
     val depth = externalTransactionDepth.get() ?: 0
     if (depth <= 0) {
@@ -130,10 +134,23 @@ internal fun assertExternalTransactionOwnerThreadOrThrow(operation: String) {
         throw IllegalStateException("Cannot call $operation because no transaction is active.")
     }
     if (ownerThreadId != currentThreadId) {
-        throw IllegalStateException(
-            "Cannot call $operation on thread '${Thread.currentThread().name}'. " +
-                "The transaction (id=$externalTransactionId) is owned by a different thread (id=$ownerThreadId)."
-        )
+        val message = "Cannot call $operation on thread '${Thread.currentThread().name}'. " +
+            "The transaction (id=$externalTransactionId) is owned by a different thread (id=$ownerThreadId)."
+        handleCrossThreadViolation(message)
+    }
+}
+
+/**
+ * Handles cross-thread violation based on [LitePalContext.failFastOnCrossThreadViolation].
+ * - true: Throws [IllegalStateException].
+ * - false: Only logs a warning.
+ */
+private fun handleCrossThreadViolation(message: String) {
+    if (LitePalContext.failFastOnCrossThreadViolation) {
+        throw IllegalStateException(message)
+    } else {
+        logger("[LitePal WARNING] Cross-thread violation detected: $message")
+        logger("Stack trace: ${Thread.currentThread().stackTrace.joinToString("\n")}")
     }
 }
 
