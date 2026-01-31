@@ -17,8 +17,17 @@
 package org.litepal.extension
 
 import android.content.ContentValues
+import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.litepal.LitePal
 import org.litepal.crud.LitePalSupport
+import org.litepal.dbSingleContextNullable
+import org.litepal.suspendingTransactionThreadLocal
+import org.litepal.withLockAndDbContext
+import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Extension of LitePal class for Kotlin api.
@@ -625,16 +634,57 @@ fun <T : LitePalSupport> Collection<T>.saveAll() = LitePal.saveAll(this)
  * If lambda return true, all db operations in lambda will be committed.
  * Otherwise all db operations will be rolled back.
  */
-@Synchronized fun LitePal.runInTransaction(block: () -> Boolean): Boolean {
+fun LitePal.runInTransaction(block: () -> Boolean): Boolean = withLockAndDbContext {
     beginTransaction()
-    val succeeded = try {
-        block()
+    var succeeded = false
+    try {
+        succeeded = block()
+        if (succeeded) {
+            setTransactionSuccessful()
+        }
     } catch (e: Exception) {
-        false
+        succeeded = false
+    } finally {
+        endTransaction()
     }
-    if (succeeded) {
-        setTransactionSuccessful()
+    succeeded
+}
+
+private val transactionContext: CoroutineContext by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+    Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "LitePal-Transaction").apply { isDaemon = true }
+    }.asCoroutineDispatcher()
+}
+
+/**
+ * 在协程中安全地执行数据库事务。
+ *
+ * - 事务块内会被切换到单线程上下文执行，确保 Android SQLite 事务的线程约束；
+ * - 事务块内若切换到其他线程/调度器并执行数据库操作，将 fail-fast 抛异常，避免死锁/卡死。
+ *
+ * 注意：该 API 仅用于 Kotlin 协程；Java 请继续使用 [LitePal.runInTransaction]。
+ */
+suspend fun <R> LitePal.withTransaction(block: suspend () -> R): R {
+    val currentTransactionThreadId = suspendingTransactionThreadLocal().get()
+    val targetContext = dbSingleContextNullable ?: transactionContext
+
+    // 支持嵌套：若已处于 suspending transaction，则复用当前事务上下文，不重复 begin/end。
+    if (currentTransactionThreadId != null) {
+        return withContext(targetContext) { coroutineScope { block() } }
     }
-    endTransaction()
-    return succeeded
+
+    return withContext(targetContext) {
+        val transactionThreadId = Thread.currentThread().id
+        val threadLocalElement = suspendingTransactionThreadLocal().asContextElement(transactionThreadId)
+        withContext(threadLocalElement) {
+            beginTransaction()
+            try {
+                val result = coroutineScope { block() }
+                setTransactionSuccessful()
+                result
+            } finally {
+                endTransaction()
+            }
+        }
+    }
 }
