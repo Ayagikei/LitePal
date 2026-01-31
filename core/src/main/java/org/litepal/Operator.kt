@@ -78,34 +78,20 @@ object Operator {
      * @return A writable SQLiteDatabase instance
      */
     val database: SQLiteDatabase
-        get() {
-            assertNotSuspendingTransactionOnDifferentThread()
-            return Connector.getDatabase()
-        }
+        get() = Connector.getDatabase()
 
     /**
      * Begins a transaction in EXCLUSIVE mode.
      */
     fun beginTransaction() {
-        beginExternalTransactionLockOrThrow()
-        try {
-            database.beginTransaction()
-        } catch (t: Throwable) {
-            rollbackExternalTransactionBegin()
-            throw t
-        }
+        database.beginTransaction()
     }
 
     /**
      * End a transaction.
      */
     fun endTransaction() {
-        assertExternalTransactionOwnerThreadOrThrow("endTransaction()")
-        try {
-            database.endTransaction()
-        } finally {
-            endExternalTransactionLockOrThrow()
-        }
+        database.endTransaction()
     }
 
     /**
@@ -114,7 +100,6 @@ object Operator {
      * If any errors are encountered between this and endTransaction the transaction will still be committed.
      */
     fun setTransactionSuccessful() {
-        assertExternalTransactionOwnerThreadOrThrow("setTransactionSuccessful()")
         database.setTransactionSuccessful()
     }
 

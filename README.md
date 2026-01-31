@@ -24,7 +24,7 @@ Edit your **build.gradle** file and add below dependency.
 
 ``` groovy
 dependencies {
-    implementation 'fun.lifeupapp:litepal:3.5.0'
+    implementation 'fun.lifeupapp:litepal:3.5.2'
 }
 ```
 
@@ -453,14 +453,13 @@ If you find any bug when using LitePal, please report **[here](https://github.co
 
 ## Change logs
 
-### 3.5.0
- * Add **LitePal.withTransaction{}** for safe suspending transactions (fail-fast on cross-thread database access to avoid deadlocks).
- * Limit cross-thread transaction assertions to suspending transactions only, to avoid impacting non-transaction coroutine usage.
+### 3.5.2
+ * Rollback coroutine transaction fail-fast and withTransaction to avoid lock-related regressions.
+ * Keep composite index support (IndexListener + schema diff handling) and related docs.
 
 ### 3.3.1
  * Add **IndexListener** and **LitePal.registerIndexListener()** for creating indexes (e.g. composite indexes) after database create/upgrade.
  * Avoid unnecessary table rebuilds by ignoring composite indexes during schema diff.
- * Fail-fast on cross-thread transaction access to prevent deadlocks.
 
 ### 3.2.3
  * Support database index by adding @Column(index = true) on field.
